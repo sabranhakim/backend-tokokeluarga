@@ -2,22 +2,27 @@
 
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 new class extends Component {
     public $roles;
+    public $permissions;
     public $name;
+    public $selected_permissions = [];
     public $roleId;
     public $isEdit = false;
     public $showModal = false;
 
     public function mount()
     {
-        $this->roles = Role::all();
+        $this->roles = Role::with('permissions')->get();
+        $this->permissions = Permission::all();
     }
 
     public function resetFields()
     {
         $this->name = '';
+        $this->selected_permissions = [];
         $this->isEdit = false;
     }
 
@@ -34,9 +39,12 @@ new class extends Component {
         ]);
 
         if ($this->isEdit) {
-            Role::find($this->roleId)->update(['name' => $this->name]);
+            $role = Role::find($this->roleId);
+            $role->update(['name' => $this->name]);
+            $role->syncPermissions($this->selected_permissions);
         } else {
-            Role::create(['name' => $this->name]);
+            $role = Role::create(['name' => $this->name]);
+            $role->givePermissionTo($this->selected_permissions);
         }
 
         $this->showModal = false;
@@ -49,6 +57,7 @@ new class extends Component {
         $role = Role::find($id);
         $this->roleId = $role->id;
         $this->name = $role->name;
+        $this->selected_permissions = $role->permissions->pluck('name')->toArray();
         $this->isEdit = true;
         $this->showModal = true;
     }
@@ -71,11 +80,12 @@ new class extends Component {
         </button>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden max-w-2xl">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <table class="w-full text-left">
             <thead>
                 <tr class="bg-slate-50">
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Nama Role</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Permission</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-right">Aksi</th>
                 </tr>
             </thead>
@@ -83,6 +93,13 @@ new class extends Component {
                 @foreach($roles as $role)
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="px-6 py-4 font-medium text-slate-900">{{ $role->name }}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-1">
+                            @foreach($role->permissions as $perm)
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">{{ $perm->name }}</span>
+                            @endforeach
+                        </div>
+                    </td>
                     <td class="px-6 py-4 text-right space-x-2">
                         <button wire:click="edit({{ $role->id }})" class="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
                         <button wire:click="delete({{ $role->id }})" wire:confirm="Yakin ingin menghapus role ini?" class="text-red-600 hover:text-red-700 font-medium">Hapus</button>
@@ -96,18 +113,29 @@ new class extends Component {
     <!-- Modal Role -->
     @if($showModal)
     <div class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h4 class="text-lg font-bold text-slate-800">{{ $isEdit ? 'Edit Role' : 'Tambah Role' }}</h4>
                 <button wire:click="$set('showModal', false)" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Nama Role</label>
                     <input wire:model="name" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
                     @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Permissions</label>
+                    <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl max-h-60 overflow-y-auto">
+                        @foreach($permissions as $perm)
+                        <label class="flex items-center space-x-2 p-1 hover:bg-white rounded transition-colors cursor-pointer">
+                            <input wire:model="selected_permissions" type="checkbox" value="{{ $perm->name }}" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                            <span class="text-sm text-slate-600">{{ $perm->name }}</span>
+                        </label>
+                        @endforeach
+                    </div>
                 </div>
             </div>
             <div class="px-6 py-4 bg-slate-50 flex justify-end space-x-3">
