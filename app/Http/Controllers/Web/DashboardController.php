@@ -12,16 +12,6 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalBarang = Barang::count();
-        $totalSupplier = Supplier::count();
-        $totalPenerimaan = PenerimaanBarang::count();
-        $penerimaanTerbaru = PenerimaanBarang::with('supplier', 'user')->latest()->take(5)->get();
-
-        return view('dashboard', compact(
-            'totalBarang',
-            'totalSupplier',
-            'totalPenerimaan',
-            'penerimaanTerbaru'
-        ));
+        return view('dashboard');
     }
 }
