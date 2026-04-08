@@ -4,19 +4,21 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\PenerimaanBarang;
-use Illuminate\Http\Request;
 
 class PenerimaanBarangController extends Controller
 {
     public function index()
     {
-        $penerimaans = PenerimaanBarang::with('supplier', 'user')->latest()->paginate(10);
-        return view('penerimaan.index', compact('penerimaans'));
+        return view('penerimaan.index');
+    }
+
+    public function create()
+    {
+        return view('penerimaan.create');
     }
 
     public function show(PenerimaanBarang $penerimaanBarang)
     {
-        $penerimaanBarang->load('detailPenerimaans.barang', 'supplier', 'user');
         return view('penerimaan.show', compact('penerimaanBarang'));
     }
 
@@ -30,8 +32,6 @@ class PenerimaanBarangController extends Controller
 
     public function destroy(PenerimaanBarang $penerimaanBarang)
     {
-        // Should we delete? Usually, we might just cancel or keep for history.
-        // But for a basic CRUD, we can provide delete.
         $penerimaanBarang->delete();
 
         return redirect()->route('penerimaan.index')

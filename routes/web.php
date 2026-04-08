@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('kategori', KategoriController::class);
 
     Route::get('penerimaan', [PenerimaanBarangController::class, 'index'])->name('penerimaan.index');
+    Route::get('penerimaan/create', [PenerimaanBarangController::class, 'create'])->name('penerimaan.create');
     Route::get('penerimaan/{penerimaanBarang}', [PenerimaanBarangController::class, 'show'])->name('penerimaan.show');
     Route::patch('penerimaan/{penerimaanBarang}/verify', [PenerimaanBarangController::class, 'verify'])->name('penerimaan.verify');
     Route::delete('penerimaan/{penerimaanBarang}', [PenerimaanBarangController::class, 'destroy'])->name('penerimaan.destroy');
