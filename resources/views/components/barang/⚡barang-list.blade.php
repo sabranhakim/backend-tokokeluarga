@@ -14,7 +14,7 @@ new class extends Component {
 
     // Form fields
     public $barangId;
-    public $kode_barang, $nama_barang, $kategori_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0;
+    public $kode_barang, $nama_barang, $kategori_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10;
 
     protected $rules = [
         'kode_barang' => 'required|unique:barangs,kode_barang',
@@ -24,6 +24,7 @@ new class extends Component {
         'harga_beli' => 'required|numeric|min:0',
         'harga_jual' => 'required|numeric|min:0',
         'stok' => 'required|numeric|min:0',
+        'stok_minimal' => 'required|numeric|min:0',
     ];
 
     public function with()
@@ -61,6 +62,7 @@ new class extends Component {
         $this->harga_beli = 0;
         $this->harga_jual = 0;
         $this->stok = 0;
+        $this->stok_minimal = 10;
         $this->isEdit = false;
     }
 
@@ -75,6 +77,7 @@ new class extends Component {
         $this->harga_beli = $barang->harga_beli;
         $this->harga_jual = $barang->harga_jual;
         $this->stok = $barang->stok;
+        $this->stok_minimal = $barang->stok_minimal;
         $this->isEdit = true;
         $this->showModal = true;
     }
@@ -100,7 +103,7 @@ new class extends Component {
         $this->dispatch('notify', $message);
     }
 
-    public function delete($id) 
+    public function delete($id)
     {
         Barang::destroy($id);
         $this->dispatch('notify', 'Barang berhasil dihapus');
@@ -138,7 +141,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok / Min</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -163,11 +166,15 @@ new class extends Component {
                         </td>
                         <td class="px-6 py-4 text-center">
                             @php
-                                $stokColor = $barang->stok <= 5 ? 'bg-red-100 text-red-700' : ($barang->stok <= 15 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+                                $isLow = $barang->stok <= $barang->stok_minimal;
+                                $stokColor = $isLow ? 'bg-red-100 text-red-700 border-red-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200';
                             @endphp
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $stokColor }}">
-                                {{ $barang->stok }}
-                            </span>
+                            <div class="flex flex-col items-center">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $stokColor }}">
+                                    {{ $barang->stok }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-tighter">Min: {{ $barang->stok_minimal }}</span>
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             <button wire:click="edit({{ $barang->id }})" class="text-amber-600 hover:text-amber-700 font-medium">
@@ -250,6 +257,13 @@ new class extends Component {
                         <label class="block text-sm font-bold text-slate-700">Stok</label>
                         <input wire:model="stok" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok') border-red-500 @enderror">
                         @error('stok') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Stok Minimal -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-bold text-slate-700">Batas Stok Minimal (Alert)</label>
+                        <input wire:model="stok_minimal" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok_minimal') border-red-500 @enderror">
+                        @error('stok_minimal') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Harga Beli -->

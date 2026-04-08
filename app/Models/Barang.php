@@ -19,6 +19,7 @@ class Barang extends Model
         'harga_beli',
         'harga_jual',
         'stok',
+        'stok_minimal',
     ];
 
     public function kategori(): BelongsTo
@@ -29,10 +30,5 @@ class Barang extends Model
     public function detailPenerimaans(): HasMany
     {
         return $this->hasMany(DetailPenerimaan::class);
-    }
-
-    public function detailPenjualans(): HasMany
-    {
-        return $this->hasMany(DetailPenjualan::class);
     }
 }
