@@ -6,6 +6,7 @@
     <title>Toko Keluarga - Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 antialiased">
     <div class="flex h-screen overflow-hidden">
