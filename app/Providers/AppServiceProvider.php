@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Barang;
+use App\Models\PenerimaanBarang;
 use App\Observers\BarangObserver;
+use App\Observers\PenerimaanBarangObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Barang::observe(BarangObserver::class);
+        PenerimaanBarang::observe(PenerimaanBarangObserver::class);
     }
 }

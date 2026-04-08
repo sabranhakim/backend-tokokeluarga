@@ -58,15 +58,25 @@ new class extends Component {
                 <div class="px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 relative group">
                     <div class="flex items-start">
                         <div class="flex-shrink-0 pt-1">
-                            @if(($notification->data['type'] ?? '') == 'low_stock')
+                            @php
+                                $type = $notification->data['type'] ?? '';
+                            @endphp
+                            
+                            @if($type == 'low_stock')
                                 <div class="p-2 bg-amber-50 rounded-lg">
                                     <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                     </svg>
                                 </div>
-                            @else
+                            @elseif($type == 'new_penerimaan')
                                 <div class="p-2 bg-blue-50 rounded-lg">
                                     <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                    </svg>
+                                </div>
+                            @else
+                                <div class="p-2 bg-slate-50 rounded-lg">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                 </div>
@@ -80,7 +90,7 @@ new class extends Component {
                                 {{ $notification->created_at->diffForHumans() }}
                             </p>
                         </div>
-                        <button wire:click="markAsRead('{{ $notification->id }}')" class="ml-2 text-slate-300 hover:text-slate-500">
+                        <button wire:click="markAsRead('{{ $notification->id }}')" class="ml-2 text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
