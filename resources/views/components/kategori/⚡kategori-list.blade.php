@@ -28,6 +28,11 @@ new class extends Component {
         ];
     }
 
+    public function mount()
+    {
+        // View is allowed for staff
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -35,6 +40,7 @@ new class extends Component {
 
     public function openModal()
     {
+        $this->authorize('manage kategori');
         $this->resetFields();
         $this->showModal = true;
     }
@@ -48,6 +54,7 @@ new class extends Component {
 
     public function edit($id)
     {
+        $this->authorize('manage kategori');
         $kategori = Kategori::findOrFail($id);
         $this->kategoriId = $kategori->id;
         $this->nama_kategori = $kategori->nama_kategori;
@@ -57,6 +64,7 @@ new class extends Component {
 
     public function save()
     {
+        $this->authorize('manage kategori');
         $validationRules = $this->rules;
         if ($this->isEdit) {
             $validationRules['nama_kategori'] = 'required|min:3|unique:kategoris,nama_kategori,' . $this->kategoriId;
@@ -78,6 +86,7 @@ new class extends Component {
 
     public function delete($id)
     {
+        $this->authorize('manage kategori');
         try {
             Kategori::destroy($id);
             $this->dispatch('notify', 'Kategori berhasil dihapus');
@@ -101,10 +110,17 @@ new class extends Component {
                 </span>
                 <input wire:model.live="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all" placeholder="Cari kategori...">
             </div>
+            @can('view trash')
+            <a href="{{ route('trash.kategori.index') }}" class="text-slate-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all" title="Buka Trash">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </a>
+            @endcan
+            @can('manage kategori')
             <button wire:click="openModal" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center whitespace-nowrap">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 Tambah Kategori
             </button>
+            @endcan
         </div>
     </div>
 
@@ -124,8 +140,12 @@ new class extends Component {
                         <td class="px-6 py-4 text-sm text-slate-500">#{{ $kategori->id }}</td>
                         <td class="px-6 py-4 font-medium text-slate-900">{{ $kategori->nama_kategori }}</td>
                         <td class="px-6 py-4 text-right space-x-2">
+                            @can('manage kategori')
                             <button wire:click="edit({{ $kategori->id }})" class="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
                             <button wire:click="delete({{ $kategori->id }})" wire:confirm="Yakin ingin menghapus kategori ini?" class="text-red-600 hover:text-red-700 font-medium">Hapus</button>
+                            @else
+                            <span class="text-xs text-slate-400 italic">No Access</span>
+                            @endcan
                         </td>
                     </tr>
                     @empty

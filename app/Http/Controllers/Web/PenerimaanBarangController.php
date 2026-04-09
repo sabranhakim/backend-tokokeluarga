@@ -22,6 +22,11 @@ class PenerimaanBarangController extends Controller
         return view('penerimaan.show', compact('penerimaanBarang'));
     }
 
+    public function trash()
+    {
+        return view('penerimaan.trash');
+    }
+
     public function verify(PenerimaanBarang $penerimaanBarang)
     {
         $penerimaanBarang->update(['status_verifikasi' => 'verified']);

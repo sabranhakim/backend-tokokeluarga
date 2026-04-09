@@ -10,4 +10,9 @@ class KategoriController extends Controller
     {
         return view('kategori.index');
     }
+
+    public function trash()
+    {
+        return view('kategori.trash');
+    }
 }

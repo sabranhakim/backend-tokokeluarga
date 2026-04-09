@@ -10,4 +10,9 @@ class SupplierController extends Controller
     {
         return view('supplier.index');
     }
+
+    public function trash()
+    {
+        return view('supplier.trash');
+    }
 }

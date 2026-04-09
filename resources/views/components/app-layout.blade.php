@@ -86,5 +86,49 @@
     </div>
 
     @livewireScripts
+    
+    <!-- Toast Notifications -->
+    <div x-data="{ 
+            messages: [],
+            remove(id) {
+                this.messages = this.messages.filter(m => m.id !== id)
+            },
+            add(message, type = 'success') {
+                const id = Date.now()
+                this.messages.push({ id, text: message, type })
+                setTimeout(() => this.remove(id), 5000)
+            }
+        }"
+        @notify.window="add($event.detail)"
+        class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-80">
+        
+        <template x-for="message in messages" :key="message.id">
+            <div x-show="true" 
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform translate-x-8"
+                x-transition:enter-end="opacity-100 transform translate-x-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 transform translate-x-0"
+                x-transition:leave-end="opacity-0 transform translate-x-8"
+                :class="{
+                    'bg-emerald-600': message.type === 'success',
+                    'bg-red-600': message.type === 'error',
+                    'bg-blue-600': message.type === 'info'
+                }"
+                class="text-white px-4 py-3 rounded-lg shadow-lg flex justify-between items-start pointer-events-auto">
+                <p x-text="message.text" class="text-sm font-medium"></p>
+                <button @click="remove(message.id)" class="ml-2 text-white/80 hover:text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </template>
+
+        @if(session()->has('success'))
+            <div x-init="add('{{ session('success') }}', 'success')"></div>
+        @endif
+        @if(session()->has('error'))
+            <div x-init="add('{{ session('error') }}', 'error')"></div>
+        @endif
+    </div>
 </body>
 </html>

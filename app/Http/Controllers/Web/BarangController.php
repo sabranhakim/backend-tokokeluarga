@@ -12,4 +12,9 @@ class BarangController extends Controller
     {
         return view('barang.index');
     }
+
+    public function trash()
+    {
+        return view('barang.trash');
+    }
 }

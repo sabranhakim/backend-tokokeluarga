@@ -15,6 +15,11 @@ new class extends Component {
 
     public function mount()
     {
+        if (!auth()->user()->can('manage roles')) {
+            session()->flash('error', 'Anda tidak memiliki akses ke manajemen role.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+        
         $this->roles = Role::with('permissions')->get();
         $this->permissions = Permission::all();
     }
@@ -28,12 +33,14 @@ new class extends Component {
 
     public function openModal()
     {
+        $this->authorize('manage roles');
         $this->resetFields();
         $this->showModal = true;
     }
 
     public function save()
     {
+        $this->authorize('manage roles');
         $this->validate([
             'name' => 'required|unique:roles,name,' . $this->roleId,
         ]);
@@ -48,12 +55,13 @@ new class extends Component {
         }
 
         $this->showModal = false;
-        $this->mount();
+        $this->roles = Role::with('permissions')->get(); // Update data without full mount
         $this->dispatch('notify', 'Role berhasil disimpan');
     }
 
     public function edit($id)
     {
+        $this->authorize('manage roles');
         $role = Role::find($id);
         $this->roleId = $role->id;
         $this->name = $role->name;
@@ -64,8 +72,9 @@ new class extends Component {
 
     public function delete($id)
     {
+        $this->authorize('manage roles');
         Role::destroy($id);
-        $this->mount();
+        $this->roles = Role::with('permissions')->get(); // Update data without full mount
         $this->dispatch('notify', 'Role berhasil dihapus');
     }
 };
@@ -74,10 +83,12 @@ new class extends Component {
 <div class="p-6">
     <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-bold text-slate-800">Daftar Role</h3>
+        @can('manage roles')
         <button wire:click="openModal" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
             Tambah Role
         </button>
+        @endcan
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -101,8 +112,12 @@ new class extends Component {
                         </div>
                     </td>
                     <td class="px-6 py-4 text-right space-x-2">
+                        @can('manage roles')
                         <button wire:click="edit({{ $role->id }})" class="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
                         <button wire:click="delete({{ $role->id }})" wire:confirm="Yakin ingin menghapus role ini?" class="text-red-600 hover:text-red-700 font-medium">Hapus</button>
+                        @else
+                        <span class="text-xs text-slate-400 italic">No Access</span>
+                        @endcan
                     </td>
                 </tr>
                 @endforeach

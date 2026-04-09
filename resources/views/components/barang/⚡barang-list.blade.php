@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Barang;
 use App\Models\Kategori;
+use function Laravel\Folio\name;
 
 new class extends Component {
     use WithPagination;
@@ -41,6 +42,12 @@ new class extends Component {
         ];
     }
 
+    public function mount()
+    {
+        // No restriction on mount because staff can view barang, 
+        // but we'll restrict actions.
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -48,6 +55,7 @@ new class extends Component {
 
     public function openModal()
     {
+        $this->authorize('manage barang');
         $this->resetFields();
         $this->showModal = true;
     }
@@ -68,6 +76,7 @@ new class extends Component {
 
     public function edit($id)
     {
+        $this->authorize('manage barang');
         $barang = Barang::findOrFail($id);
         $this->barangId = $barang->id;
         $this->kode_barang = $barang->kode_barang;
@@ -84,6 +93,7 @@ new class extends Component {
 
     public function save()
     {
+        $this->authorize('manage barang');
         $validationRules = $this->rules;
         if ($this->isEdit) {
             $validationRules['kode_barang'] = 'required|unique:barangs,kode_barang,' . $this->barangId;
@@ -105,6 +115,7 @@ new class extends Component {
 
     public function delete($id)
     {
+        $this->authorize('manage barang');
         Barang::destroy($id);
         $this->dispatch('notify', 'Barang berhasil dihapus');
     }
@@ -115,7 +126,7 @@ new class extends Component {
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
             <h3 class="text-xl font-bold text-slate-800">Daftar Stok Barang</h3>
-            <p class="text-sm text-slate-500">Manajemen inventaris barang dan stok</p>
+            <p class="text-sm text-slate-500">Manajemen inventaris barang and stok</p>
         </div>
         <div class="flex items-center gap-3 w-full md:w-auto">
             <div class="relative flex-1 md:w-64">
@@ -124,10 +135,17 @@ new class extends Component {
                 </span>
                 <input wire:model.live="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all" placeholder="Cari barang...">
             </div>
+            @can('view trash')
+            <a href="{{ route('trash.barang.index') }}" class="text-slate-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all" title="Buka Trash">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </a>
+            @endcan
+            @can('manage barang')
             <button wire:click="openModal" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center whitespace-nowrap">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 Tambah Barang
             </button>
+            @endcan
         </div>
     </div>
 
@@ -177,12 +195,16 @@ new class extends Component {
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
+                            @can('manage barang')
                             <button wire:click="edit({{ $barang->id }})" class="text-amber-600 hover:text-amber-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
                             <button wire:click="delete({{ $barang->id }})" wire:confirm="Yakin ingin menghapus barang ini?" class="text-red-600 hover:text-red-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
+                            @else
+                            <span class="text-xs text-slate-400 italic">No Access</span>
+                            @endcan
                         </td>
                     </tr>
                     @empty
