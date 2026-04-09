@@ -2,10 +2,24 @@
 
 namespace App\Services;
 
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class CloudinaryService
 {
+    protected $cloudinary;
+
+    public function __construct()
+    {
+        $url = config('services.cloudinary.url');
+
+        if (!$url) {
+            throw new \Exception('Cloudinary configuration error: services.cloudinary.url is not set. Check your .env and config/services.php');
+        }
+
+        // Initialize directly with the URL string
+        $this->cloudinary = new Cloudinary($url);
+    }
+
     /**
      * Upload an image to Cloudinary and return the secure URL.
      *
@@ -19,14 +33,17 @@ class CloudinaryService
             return null;
         }
 
-        $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
-            'folder' => $folder,
-            'transformation' => [
+        try {
+            $response = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
+                'folder' => $folder,
                 'quality' => 'auto',
                 'fetch_format' => 'auto',
-            ],
-        ])->getSecurePath();
+            ]);
 
-        return $uploadedFileUrl;
+            return $response['secure_url'];
+        } catch (\Exception $e) {
+            \Log::error('Cloudinary Upload Error: ' . $e->getMessage());
+            return null;
+        }
     }
 }
