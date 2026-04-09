@@ -24,7 +24,7 @@ new class extends Component {
         return [
             'kategoris' => Kategori::where('nama_kategori', 'like', '%' . $this->search . '%')
                 ->latest()
-                ->paginate(10),
+                ->paginate(20), // Increased pagination for two columns
         ];
     }
 
@@ -124,47 +124,56 @@ new class extends Component {
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden max-w-2xl">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-slate-50/50">
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16">ID</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Kategori</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($kategoris as $kategori)
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 text-sm text-slate-500">#{{ $kategori->id }}</td>
-                        <td class="px-6 py-4 font-medium text-slate-900">{{ $kategori->nama_kategori }}</td>
-                        <td class="px-6 py-4 text-right space-x-2">
-                            @can('manage kategori')
-                            <button wire:click="edit({{ $kategori->id }})" class="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
-                            <button wire:click="delete({{ $kategori->id }})" wire:confirm="Yakin ingin menghapus kategori ini?" class="text-red-600 hover:text-red-700 font-medium">Hapus</button>
-                            @else
-                            <span class="text-xs text-slate-400 italic">No Access</span>
-                            @endcan
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="3" class="px-6 py-10 text-center text-slate-500 italic text-sm">Belum ada data kategori.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    @php
+        $chunks = $kategoris->chunk(ceil($kategoris->count() / 2));
+    @endphp
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        @forelse($chunks as $chunk)
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-50/50 border-b border-slate-100">
+                            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16">ID</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Kategori</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($chunk as $kategori)
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 text-sm text-slate-500">#{{ $kategori->id }}</td>
+                            <td class="px-6 py-4 font-medium text-slate-900">{{ $kategori->nama_kategori }}</td>
+                            <td class="px-6 py-4 text-right space-x-2">
+                                @can('manage kategori')
+                                <button wire:click="edit({{ $kategori->id }})" class="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
+                                <button wire:click="delete({{ $kategori->id }})" wire:confirm="Yakin ingin menghapus kategori ini?" class="text-red-600 hover:text-red-700 font-medium">Hapus</button>
+                                @else
+                                <span class="text-xs text-slate-400 italic">No Access</span>
+                                @endcan
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100">
-            {{ $kategoris->links() }}
+        @empty
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-10 text-center text-slate-500 italic text-sm">
+            Belum ada data kategori.
         </div>
+        @endforelse
+    </div>
+
+    <div class="mt-6">
+        {{ $kategoris->links() }}
     </div>
 
     <!-- Modal Form -->
     @if($showModal)
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-md">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h4 class="text-lg font-bold text-slate-800">{{ $isEdit ? 'Edit Kategori' : 'Tambah Kategori' }}</h4>
                 <button wire:click="$set('showModal', false)" class="text-slate-400 hover:text-slate-600">
