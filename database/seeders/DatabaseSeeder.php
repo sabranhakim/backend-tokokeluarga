@@ -25,11 +25,16 @@ class DatabaseSeeder extends Seeder
             'view dashboard',
             'manage users',
             'manage roles',
+            'view barang',
             'manage barang',
+            'view supplier',
             'manage supplier',
+            'view kategori',
             'manage kategori',
-            'manage penerimaan',
+            'view penerimaan',
+            'create penerimaan',
             'verify penerimaan',
+            'delete penerimaan',
             'view trash',
             'manage trash',
         ];
@@ -73,7 +78,7 @@ class DatabaseSeeder extends Seeder
         // Dummy Data
         $kategoris = Kategori::factory(10)->create();
         $suppliers = Supplier::factory(10)->create();
-        
+
         $barangs = Barang::factory(50)->recycle($kategoris)->create();
 
         PenerimaanBarang::factory(20)
@@ -88,7 +93,7 @@ class DatabaseSeeder extends Seeder
                 'detailPenerimaans'
             )
             ->create();
-            
+
         $this->call(TrashPermissionSeeder::class);
     }
 }

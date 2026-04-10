@@ -37,7 +37,9 @@ class PenerimaanBarang extends Model
 
     public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class)->withTrashed()->withDefault([
+            'nama_supplier' => 'Supplier telah dihapus permanen'
+        ]);
     }
 
     public function user(): BelongsTo

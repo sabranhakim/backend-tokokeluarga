@@ -19,6 +19,14 @@ new class extends Component {
         'nama_kategori' => 'required|min:3|unique:kategoris,nama_kategori',
     ];
 
+    public function mount()
+    {
+        if (!auth()->user()->can('view kategori')) {
+            session()->flash('error', 'Anda tidak memiliki akses ke data kategori.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+    }
+
     public function with()
     {
         return [
@@ -26,11 +34,6 @@ new class extends Component {
                 ->latest()
                 ->paginate(20), // Increased pagination for two columns
         ];
-    }
-
-    public function mount()
-    {
-        // View is allowed for staff
     }
 
     public function updatingSearch()

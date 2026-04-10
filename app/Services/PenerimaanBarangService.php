@@ -49,8 +49,8 @@ class PenerimaanBarangService
                     'jumlah' => $item['jumlah'],
                 ]);
 
-                // Update stock in Barang table
-                $barang = Barang::findOrFail($item['barang_id']);
+                // Update stock in Barang table with lock for update
+                $barang = Barang::where('id', $item['barang_id'])->lockForUpdate()->firstOrFail();
                 $barang->increment('stok', $item['jumlah']);
             }
 

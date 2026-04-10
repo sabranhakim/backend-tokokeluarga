@@ -31,6 +31,10 @@ new class extends Component {
 
     public function mount()
     {
+        if (!auth()->user()->can('create penerimaan')) {
+            session()->flash('error', 'Anda tidak memiliki akses untuk menambah penerimaan.');
+            return $this->redirect(route('penerimaan.index'), navigate: true);
+        }
         $this->tgl_terima = date('Y-m-d');
         $this->no_terima = 'TRM-' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
         $this->addItem(); // Start with one empty item
@@ -52,6 +56,7 @@ new class extends Component {
 
     public function save(PenerimaanBarangService $service)
     {
+        $this->authorize('create penerimaan');
         $validated = $this->validate();
 
         try {

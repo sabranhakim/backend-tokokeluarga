@@ -21,6 +21,14 @@ new class extends Component {
         'no_telp' => 'required|numeric',
     ];
 
+    public function mount()
+    {
+        if (!auth()->user()->can('view supplier')) {
+            session()->flash('error', 'Anda tidak memiliki akses ke data supplier.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+    }
+
     public function with()
     {
         return [
@@ -29,11 +37,6 @@ new class extends Component {
                 ->latest()
                 ->paginate(10),
         ];
-    }
-
-    public function mount()
-    {
-        // View allowed for staff
     }
 
     public function updatingSearch()

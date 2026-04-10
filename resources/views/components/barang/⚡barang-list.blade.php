@@ -44,8 +44,10 @@ new class extends Component {
 
     public function mount()
     {
-        // No restriction on mount because staff can view barang, 
-        // but we'll restrict actions.
+        if (!auth()->user()->can('view barang')) {
+            session()->flash('error', 'Anda tidak memiliki akses ke data barang.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
     }
 
     public function updatingSearch()

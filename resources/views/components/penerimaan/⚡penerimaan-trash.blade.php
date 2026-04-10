@@ -9,6 +9,14 @@ new class extends Component {
 
     public $search = '';
 
+    public function mount()
+    {
+        if (!auth()->user()->can('view trash')) {
+            session()->flash('error', 'Anda tidak memiliki akses ke trash.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+    }
+
     public function with()
     {
         return [

@@ -51,27 +51,27 @@ Route::middleware('auth')->group(function () {
 
             Route::post('/penerimaan/{id}/restore', [PenerimaanBarangController::class, 'restore'])->name('penerimaan.restore');
             Route::delete('/penerimaan/{id}/force-delete', [PenerimaanBarangController::class, 'forceDelete'])->name('penerimaan.force-delete');
-
-            Route::post('/users/{id}/restore', function ($id) {
-                \App\Models\User::withTrashed()->findOrFail($id)->restore();
-                return redirect()->back()->with('success', 'User berhasil dipulihkan');
-            })->name('user.restore');
-            Route::delete('/users/{id}/force-delete', function ($id) {
-                \App\Models\User::withTrashed()->findOrFail($id)->forceDelete();
-                return redirect()->back()->with('success', 'User berhasil dihapus permanen');
-            })->name('user.force-delete');
         });
     });
 
-    Route::resource('barang', BarangController::class);
-    Route::resource('supplier', SupplierController::class);
-    Route::resource('kategori', KategoriController::class);
+    // Resource Routes with Permissions
+    Route::middleware(['can:view barang'])->resource('barang', BarangController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+    Route::middleware(['can:manage barang'])->resource('barang', BarangController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
 
-    Route::get('penerimaan', [PenerimaanBarangController::class, 'index'])->name('penerimaan.index');
-    Route::get('penerimaan/create', [PenerimaanBarangController::class, 'create'])->name('penerimaan.create');
-    Route::get('penerimaan/{penerimaanBarang}', [PenerimaanBarangController::class, 'show'])->name('penerimaan.show');
-    Route::patch('penerimaan/{penerimaanBarang}/verify', [PenerimaanBarangController::class, 'verify'])->name('penerimaan.verify');
-    Route::delete('penerimaan/{penerimaanBarang}', [PenerimaanBarangController::class, 'destroy'])->name('penerimaan.destroy');
+    Route::middleware(['can:view supplier'])->resource('supplier', SupplierController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+    Route::middleware(['can:manage supplier'])->resource('supplier', SupplierController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::middleware(['can:view kategori'])->resource('kategori', KategoriController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+    Route::middleware(['can:manage kategori'])->resource('kategori', KategoriController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+    // Penerimaan Barang Routes with Specific Permissions
+    Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
+        Route::get('/', [PenerimaanBarangController::class, 'index'])->name('index')->middleware('can:view penerimaan');
+        Route::get('/create', [PenerimaanBarangController::class, 'create'])->name('create')->middleware('can:create penerimaan');
+        Route::get('/{penerimaanBarang}', [PenerimaanBarangController::class, 'show'])->name('show')->middleware('can:view penerimaan');
+        Route::patch('/{penerimaanBarang}/verify', [PenerimaanBarangController::class, 'verify'])->name('verify')->middleware('can:verify penerimaan');
+        Route::delete('/{penerimaanBarang}', [PenerimaanBarangController::class, 'destroy'])->name('destroy')->middleware('can:delete penerimaan');
+    });
 
     Route::get('activity', function () {
         return view('activity.index');
