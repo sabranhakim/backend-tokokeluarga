@@ -122,10 +122,10 @@ new class extends Component {
         <table class="w-full text-left">
             <thead>
                 <tr class="bg-slate-50">
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Nama</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Email</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Role</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-right">Aksi</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -140,8 +140,12 @@ new class extends Component {
                     </td>
                     <td class="px-6 py-4 text-right space-x-2">
                         @can('manage users')
-                        <button wire:click="edit({{ $user->id }})" class="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
-                        <button wire:click="delete({{ $user->id }})" wire:confirm="Yakin ingin menghapus user ini?" class="text-red-600 hover:text-red-700 font-medium">Hapus</button>
+                        <button wire:click="edit({{ $user->id }})" class="text-amber-600 hover:text-amber-700 font-medium" title="Edit">
+                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button wire:click="delete({{ $user->id }})" wire:confirm="Yakin ingin menghapus user ini?" class="text-red-600 hover:text-red-700 font-medium" title="Hapus">
+                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
                         @else
                         <span class="text-xs text-slate-400 italic">No Access</span>
                         @endcan
@@ -182,7 +186,7 @@ new class extends Component {
                     <label class="block text-sm font-medium text-slate-700 mb-2">Roles</label>
                     <div class="grid grid-cols-2 gap-2">
                         @foreach($roles as $role)
-                        <label class="flex items-center space-x-2">
+                        <label class="flex items-center space-x-2 cursor-pointer">
                             <input wire:model="selected_roles" type="checkbox" value="{{ $role->name }}" class="rounded text-blue-600 focus:ring-blue-500">
                             <span class="text-sm text-slate-600">{{ $role->name }}</span>
                         </label>

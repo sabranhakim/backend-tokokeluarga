@@ -9,6 +9,14 @@ new class extends Component {
 
     public $search = '';
 
+    public function mount()
+    {
+        if (!auth()->user()->can('view trash')) {
+            session()->flash('error', 'Anda tidak memiliki akses ke trash.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+    }
+
     public function with()
     {
         return [
@@ -91,8 +99,12 @@ new class extends Component {
                         </td>
                         @can('manage trash')
                         <td class="px-6 py-4 text-right space-x-2">
-                            <button wire:click="restore({{ $supplier->id }})" class="text-emerald-600 hover:text-emerald-700 font-medium">Restore</button>
-                            <button wire:click="forceDelete({{ $supplier->id }})" wire:confirm="Yakin ingin menghapus permanen?" class="text-red-600 hover:text-red-700 font-medium">Hapus Permanen</button>
+                            <button wire:click="restore({{ $supplier->id }})" class="text-emerald-600 hover:text-emerald-700 font-medium" title="Restore">
+                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            </button>
+                            <button wire:click="forceDelete({{ $supplier->id }})" wire:confirm="Yakin ingin menghapus permanen?" class="text-red-600 hover:text-red-700 font-medium" title="Delete Permanently">
+                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
                         </td>
                         @endcan
                     </tr>
