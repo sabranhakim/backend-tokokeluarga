@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Barang;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
@@ -11,8 +12,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('view trash')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke trash.');
+        if (!Gate::allows('view trash') && !auth()->user()->hasRole('admin')) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke data trash.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }
@@ -38,7 +39,8 @@ new class extends Component {
 
     public function restore($id)
     {
-        if (!auth()->user()->can('manage trash')) {
+        if (!Gate::allows('manage trash') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk memulihkan data.');
             return;
         }
         $barang = Barang::withTrashed()->findOrFail($id);
@@ -48,7 +50,8 @@ new class extends Component {
 
     public function forceDelete($id)
     {
-        if (!auth()->user()->can('manage trash')) {
+        if (!Gate::allows('manage trash') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus permanen.');
             return;
         }
         $barang = Barang::withTrashed()->findOrFail($id);

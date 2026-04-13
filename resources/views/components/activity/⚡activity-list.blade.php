@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Activitylog\Models\Activity;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
@@ -11,8 +12,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('manage activity')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke log aktivitas.');
+        if (!Gate::allows('manage activity') && !auth()->user()->hasRole('admin')) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke log aktivitas.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }

@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PenerimaanBarang;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
@@ -11,8 +12,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('view trash')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke trash.');
+        if (!Gate::allows('view trash') && !auth()->user()->hasRole('admin')) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke data trash.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }
@@ -21,11 +22,8 @@ new class extends Component {
     {
         return [
             'penerimaans' => PenerimaanBarang::onlyTrashed()
-                ->with(['supplier', 'user'])
+                ->with(['supplier'])
                 ->where('no_terima', 'like', '%' . $this->search . '%')
-                ->orWhereHas('supplier', function($query) {
-                    $query->where('nama_supplier', 'like', '%' . $this->search . '%');
-                })
                 ->latest()
                 ->paginate(10),
         ];
@@ -38,30 +36,24 @@ new class extends Component {
 
     public function restore($id)
     {
-        if (!auth()->user()->can('manage trash')) {
+        if (!Gate::allows('manage trash') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk memulihkan data.');
             return;
         }
         $penerimaan = PenerimaanBarang::withTrashed()->findOrFail($id);
         $penerimaan->restore();
-        
-        // Also restore details if they are soft-deleted
-        $penerimaan->detailPenerimaans()->withTrashed()->restore();
-
-        $this->dispatch('notify', 'Data penerimaan berhasil dipulihkan');
+        $this->dispatch('notify', 'Penerimaan berhasil dipulihkan');
     }
 
     public function forceDelete($id)
     {
-        if (!auth()->user()->can('manage trash')) {
+        if (!Gate::allows('manage trash') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus permanen.');
             return;
         }
         $penerimaan = PenerimaanBarang::withTrashed()->findOrFail($id);
-        
-        // Delete details first
-        $penerimaan->detailPenerimaans()->withTrashed()->forceDelete();
         $penerimaan->forceDelete();
-
-        $this->dispatch('notify', 'Data penerimaan berhasil dihapus permanen');
+        $this->dispatch('notify', 'Penerimaan berhasil dihapus permanen');
     }
 };
 ?>
@@ -77,7 +69,7 @@ new class extends Component {
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </span>
-                <input wire:model.live="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all" placeholder="Cari di trash...">
+                <input wire:model.live="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all" placeholder="Cari no. terima...">
             </div>
             <a href="{{ route('penerimaan.index') }}" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center whitespace-nowrap">
                 Kembali ke Daftar
@@ -91,7 +83,6 @@ new class extends Component {
                 <thead>
                     <tr class="bg-slate-50/50">
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">No. Terima</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tanggal</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Dihapus Pada</th>
                         @can('manage trash')
@@ -101,23 +92,26 @@ new class extends Component {
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($penerimaans as $penerimaan)
-                    <tr class="hover:bg-slate-50/50 transition-colors">
+                    <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-6 py-4 font-mono text-sm font-bold text-slate-700">{{ $penerimaan->no_terima }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600">{{ $penerimaan->tgl_terima?->format('d/m/Y') ?? '-' }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-900 font-medium">{{ $penerimaan->supplier->nama_supplier }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-900">{{ $penerimaan->supplier->nama_supplier }}</td>
                         <td class="px-6 py-4 text-sm text-right text-slate-600">
                             {{ $penerimaan->deleted_at?->format('d/m/Y H:i') ?? '-' }}
                         </td>
                         @can('manage trash')
-                        <td class="px-6 py-4 text-right space-x-3">
-                            <button wire:click="restore({{ $penerimaan->id }})" class="text-emerald-600 hover:text-emerald-700 font-bold text-sm">Restore</button>
-                            <button wire:click="forceDelete({{ $penerimaan->id }})" wire:confirm="Yakin ingin menghapus permanen?" class="text-red-600 hover:text-red-700 font-bold text-sm">Hapus Permanen</button>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button wire:click="restore({{ $penerimaan->id }})" class="text-emerald-600 hover:text-emerald-700 font-medium" title="Restore">
+                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            </button>
+                            <button wire:click="forceDelete({{ $penerimaan->id }})" wire:confirm="Yakin ingin menghapus permanen? Data tidak bisa dikembalikan!" class="text-red-600 hover:text-red-700 font-medium" title="Delete Permanently">
+                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
                         </td>
                         @endcan
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ auth()->user()->can('manage trash') ? 5 : 4 }}" class="px-6 py-10 text-center text-slate-500 italic text-sm">Trash kosong.</td>
+                        <td colspan="4" class="px-6 py-10 text-center text-slate-500 italic text-sm">Trash penerimaan kosong.</td>
                     </tr>
                     @endforelse
                 </tbody>

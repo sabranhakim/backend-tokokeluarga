@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
             'view trash',
             'manage trash',
             'manage laporan',
+            'manage activity',
         ];
 
         foreach ($permissions as $permission) {
