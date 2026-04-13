@@ -36,6 +36,10 @@
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                     Penerimaan Barang
                 </a>
+                <a href="{{ route('laporan.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('laporan.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H5m14 0h-2a4 4 0 00-4 4v2m-2 4h.01M9 21h6a2 2 0 002-2V5a2 2 0 00-2-2H9a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    Laporan
+                </a>
                 <div class="px-6 py-4">
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sistem</p>
                 </div>

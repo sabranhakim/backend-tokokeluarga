@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             'delete penerimaan',
             'view trash',
             'manage trash',
+            'manage laporan',
         ];
 
         foreach ($permissions as $permission) {
@@ -51,8 +52,8 @@ class DatabaseSeeder extends Seeder
         $staffRole = Role::firstOrCreate(['name' => 'staff']);
         $staffRole->givePermissionTo([
             'view dashboard',
-            'manage barang',
-            'manage penerimaan',
+            'view barang',
+            'view penerimaan',
         ]);
 
         // Create Admin User

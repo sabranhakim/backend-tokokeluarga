@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\BarangController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\KategoriController;
 use App\Http\Controllers\Web\PenerimaanBarangController;
+use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\SupplierController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +64,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['can:view kategori'])->resource('kategori', KategoriController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
     Route::middleware(['can:manage kategori'])->resource('kategori', KategoriController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::get('/laporan', [ReportController::class, 'index'])->name('laporan.index');
 
     // Penerimaan Barang Routes with Specific Permissions
     Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
