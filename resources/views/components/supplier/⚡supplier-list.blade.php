@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Supplier;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
@@ -23,8 +24,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('view supplier')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke data supplier.');
+        if (!Gate::allows('view supplier') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke data supplier.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }
@@ -46,7 +47,10 @@ new class extends Component {
 
     public function openModal()
     {
-        $this->authorize('manage supplier');
+        if (!Gate::allows('manage supplier') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menambah supplier.');
+            return;
+        }
         $this->resetFields();
         $this->showModal = true;
     }
@@ -62,7 +66,10 @@ new class extends Component {
 
     public function edit($id)
     {
-        $this->authorize('manage supplier');
+        if (!Gate::allows('manage supplier') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit supplier.');
+            return;
+        }
         $supplier = Supplier::findOrFail($id);
         $this->supplierId = $supplier->id;
         $this->nama_supplier = $supplier->nama_supplier;
@@ -74,7 +81,10 @@ new class extends Component {
 
     public function save()
     {
-        $this->authorize('manage supplier');
+        if (!Gate::allows('manage supplier') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
+            return;
+        }
         $validated = $this->validate();
 
         if ($this->isEdit) {
@@ -91,7 +101,10 @@ new class extends Component {
 
     public function delete($id)
     {
-        $this->authorize('manage supplier');
+        if (!Gate::allows('manage supplier') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus supplier.');
+            return;
+        }
         try {
             Supplier::destroy($id);
             $this->dispatch('notify', 'Supplier berhasil dihapus');

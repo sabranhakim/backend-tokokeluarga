@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     public $roles;
@@ -15,8 +16,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('manage roles')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke manajemen role.');
+        if (!Gate::allows('manage roles') && !auth()->user()->hasRole('admin')) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke manajemen role.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
         
@@ -33,14 +34,20 @@ new class extends Component {
 
     public function openModal()
     {
-        $this->authorize('manage roles');
+        if (!Gate::allows('manage roles') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menambah role.');
+            return;
+        }
         $this->resetFields();
         $this->showModal = true;
     }
 
     public function save()
     {
-        $this->authorize('manage roles');
+        if (!Gate::allows('manage roles') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
+            return;
+        }
         $this->validate([
             'name' => 'required|unique:roles,name,' . $this->roleId,
         ]);
@@ -61,7 +68,10 @@ new class extends Component {
 
     public function edit($id)
     {
-        $this->authorize('manage roles');
+        if (!Gate::allows('manage roles') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit role.');
+            return;
+        }
         $role = Role::find($id);
         $this->roleId = $role->id;
         $this->name = $role->name;
@@ -72,7 +82,10 @@ new class extends Component {
 
     public function delete($id)
     {
-        $this->authorize('manage roles');
+        if (!Gate::allows('manage roles') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus role.');
+            return;
+        }
         Role::destroy($id);
         $this->roles = Role::with('permissions')->get(); // Update data without full mount
         $this->dispatch('notify', 'Role berhasil dihapus');

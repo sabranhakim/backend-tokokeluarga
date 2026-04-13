@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PenerimaanBarang;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
@@ -11,8 +12,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('view penerimaan')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke riwayat penerimaan.');
+        if (!Gate::allows('view penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke riwayat penerimaan.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }
@@ -37,7 +38,10 @@ new class extends Component {
 
     public function delete($id)
     {
-        $this->authorize('manage penerimaan');
+        if (!Gate::allows('delete penerimaan') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus data ini.');
+            return;
+        }
         $penerimaan = PenerimaanBarang::findOrFail($id);
 
         // Optionally: adjust stock back if needed?

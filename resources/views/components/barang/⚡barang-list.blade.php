@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Barang;
 use App\Models\Kategori;
+use Illuminate\Support\Facades\Gate;
 use function Laravel\Folio\name;
 
 new class extends Component {
@@ -29,6 +30,15 @@ new class extends Component {
         'tgl_kadaluarsa' => 'nullable|date',
     ];
 
+    public function mount()
+    {
+        // Double Layer check: Permission + Role
+        if (!Gate::allows('view barang') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke data barang.');
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+    }
+
     public function with()
     {
         return [
@@ -43,14 +53,6 @@ new class extends Component {
         ];
     }
 
-    public function mount()
-    {
-        if (!auth()->user()->can('view barang')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke data barang.');
-            return $this->redirect(route('dashboard'), navigate: true);
-        }
-    }
-
     public function updatingSearch()
     {
         $this->resetPage();
@@ -58,7 +60,10 @@ new class extends Component {
 
     public function openModal()
     {
-        $this->authorize('manage barang');
+        if (!Gate::allows('manage barang') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menambah barang.');
+            return;
+        }
         $this->resetFields();
         $this->showModal = true;
     }
@@ -80,7 +85,10 @@ new class extends Component {
 
     public function edit($id)
     {
-        $this->authorize('manage barang');
+        if (!Gate::allows('manage barang') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit barang.');
+            return;
+        }
         $barang = Barang::findOrFail($id);
         $this->barangId = $barang->id;
         $this->kode_barang = $barang->kode_barang;
@@ -98,7 +106,10 @@ new class extends Component {
 
     public function save()
     {
-        $this->authorize('manage barang');
+        if (!Gate::allows('manage barang') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
+            return;
+        }
         $validationRules = $this->rules;
         if ($this->isEdit) {
             $validationRules['kode_barang'] = 'required|unique:barangs,kode_barang,' . $this->barangId;
@@ -120,7 +131,10 @@ new class extends Component {
 
     public function delete($id)
     {
-        $this->authorize('manage barang');
+        if (!Gate::allows('manage barang') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus barang.');
+            return;
+        }
         Barang::destroy($id);
         $this->dispatch('notify', 'Barang berhasil dihapus');
     }
@@ -165,7 +179,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok / Min</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Tgl. Kadaluarsa</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-center">Tgl. Kadaluarsa</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>

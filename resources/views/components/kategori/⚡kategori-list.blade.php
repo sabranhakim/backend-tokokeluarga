@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Kategori;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
@@ -21,8 +22,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('view kategori')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke data kategori.');
+        if (!Gate::allows('view kategori') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke data kategori.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }
@@ -43,7 +44,10 @@ new class extends Component {
 
     public function openModal()
     {
-        $this->authorize('manage kategori');
+        if (!Gate::allows('manage kategori') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menambah kategori.');
+            return;
+        }
         $this->resetFields();
         $this->showModal = true;
     }
@@ -57,7 +61,10 @@ new class extends Component {
 
     public function edit($id)
     {
-        $this->authorize('manage kategori');
+        if (!Gate::allows('manage kategori') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit kategori.');
+            return;
+        }
         $kategori = Kategori::findOrFail($id);
         $this->kategoriId = $kategori->id;
         $this->nama_kategori = $kategori->nama_kategori;
@@ -67,7 +74,10 @@ new class extends Component {
 
     public function save()
     {
-        $this->authorize('manage kategori');
+        if (!Gate::allows('manage kategori') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
+            return;
+        }
         $validationRules = $this->rules;
         if ($this->isEdit) {
             $validationRules['nama_kategori'] = 'required|min:3|unique:kategoris,nama_kategori,' . $this->kategoriId;
@@ -89,7 +99,10 @@ new class extends Component {
 
     public function delete($id)
     {
-        $this->authorize('manage kategori');
+        if (!Gate::allows('manage kategori') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus kategori.');
+            return;
+        }
         try {
             Kategori::destroy($id);
             $this->dispatch('notify', 'Kategori berhasil dihapus');

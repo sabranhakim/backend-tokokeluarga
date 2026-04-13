@@ -6,6 +6,7 @@ use App\Models\Supplier;
 use App\Models\Barang;
 use App\Services\PenerimaanBarangService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithFileUploads;
@@ -31,9 +32,9 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('create penerimaan')) {
-            session()->flash('error', 'Anda tidak memiliki akses untuk menambah penerimaan.');
-            return $this->redirect(route('penerimaan.index'), navigate: true);
+        if (!Gate::allows('create penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses untuk menambah penerimaan.');
+            return $this->redirect(route('dashboard'), navigate: true);
         }
         $this->tgl_terima = date('Y-m-d');
         $this->no_terima = 'TRM-' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
@@ -56,7 +57,10 @@ new class extends Component {
 
     public function save(PenerimaanBarangService $service)
     {
-        $this->authorize('create penerimaan');
+        if (!Gate::allows('create penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
+            return;
+        }
         $validated = $this->validate();
 
         try {

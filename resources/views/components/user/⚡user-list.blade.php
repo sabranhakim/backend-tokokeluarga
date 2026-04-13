@@ -4,6 +4,7 @@ use Livewire\Component;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     public $users;
@@ -15,8 +16,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!auth()->user()->can('manage users')) {
-            session()->flash('error', 'Anda tidak memiliki akses ke manajemen user.');
+        if (!Gate::allows('manage users') && !auth()->user()->hasRole('admin')) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke manajemen user.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
         $this->users = User::with('roles')->get();
@@ -34,14 +35,20 @@ new class extends Component {
 
     public function openModal()
     {
-        $this->authorize('manage users');
+        if (!Gate::allows('manage users') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menambah user.');
+            return;
+        }
         $this->resetFields();
         $this->showModal = true;
     }
 
     public function save()
     {
-        $this->authorize('manage users');
+        if (!Gate::allows('manage users') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
+            return;
+        }
         $rules = [
             'name' => 'required',
             'email' => 'required|email|unique:users,email,' . $this->userId,
@@ -80,7 +87,10 @@ new class extends Component {
 
     public function edit($id)
     {
-        $this->authorize('manage users');
+        if (!Gate::allows('manage users') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit user.');
+            return;
+        }
         $user = User::find($id);
         $this->userId = $user->id;
         $this->name = $user->name;
@@ -92,7 +102,10 @@ new class extends Component {
 
     public function delete($id)
     {
-        $this->authorize('manage users');
+        if (!Gate::allows('manage users') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus user.');
+            return;
+        }
         User::destroy($id);
         $this->users = User::with('roles')->get();
         $this->dispatch('notify', 'User berhasil dihapus');
