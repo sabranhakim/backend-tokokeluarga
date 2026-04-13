@@ -23,6 +23,11 @@ class Barang extends Model
         'harga_jual',
         'stok',
         'stok_minimal',
+        'tgl_kadaluarsa',
+    ];
+
+    protected $casts = [
+        'tgl_kadaluarsa' => 'date',
     ];
 
     public function getActivitylogOptions(): LogOptions

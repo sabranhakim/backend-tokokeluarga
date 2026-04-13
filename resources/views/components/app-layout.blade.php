@@ -69,7 +69,35 @@
         <main class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Header -->
             <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-                <h1 class="text-xl font-semibold text-slate-800">@yield('header', 'Dashboard')</h1>
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-xl font-semibold text-slate-800">@yield('header', 'Dashboard')</h1>
+                    <div class="hidden lg:flex items-center text-slate-500 text-sm border-l border-slate-200 pl-4 ml-2" 
+                        x-data="{ 
+                            date: '', 
+                            time: '',
+                            update() {
+                                const now = new Date();
+                                this.date = now.toLocaleDateString('id-ID', { 
+                                    weekday: 'long', 
+                                    day: 'numeric', 
+                                    month: 'long', 
+                                    year: 'numeric' 
+                                });
+                                this.time = now.toLocaleTimeString('id-ID', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit', 
+                                    second: '2-digit' 
+                                });
+                            }
+                        }" 
+                        x-init="update(); setInterval(() => update(), 1000)">
+                        <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span x-text="date" class="font-medium"></span>
+                        <span class="mx-3 text-slate-300">|</span>
+                        <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span x-text="time" class="font-mono font-bold text-slate-700"></span>
+                    </div>
+                </div>
                 <div class="flex items-center space-x-4">
                     <livewire:notification-header />
                     <div class="h-8 w-px bg-slate-200 mx-2"></div>

@@ -15,7 +15,7 @@ new class extends Component {
 
     // Form fields
     public $barangId;
-    public $kode_barang, $nama_barang, $kategori_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10;
+    public $kode_barang, $nama_barang, $kategori_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10, $tgl_kadaluarsa;
 
     protected $rules = [
         'kode_barang' => 'required|unique:barangs,kode_barang',
@@ -26,6 +26,7 @@ new class extends Component {
         'harga_jual' => 'required|numeric|min:0',
         'stok' => 'required|numeric|min:0',
         'stok_minimal' => 'required|numeric|min:0',
+        'tgl_kadaluarsa' => 'nullable|date',
     ];
 
     public function with()
@@ -73,6 +74,7 @@ new class extends Component {
         $this->harga_jual = 0;
         $this->stok = 0;
         $this->stok_minimal = 10;
+        $this->tgl_kadaluarsa = null;
         $this->isEdit = false;
     }
 
@@ -89,6 +91,7 @@ new class extends Component {
         $this->harga_jual = $barang->harga_jual;
         $this->stok = $barang->stok;
         $this->stok_minimal = $barang->stok_minimal;
+        $this->tgl_kadaluarsa = $barang->tgl_kadaluarsa ? $barang->tgl_kadaluarsa->format('Y-m-d') : null;
         $this->isEdit = true;
         $this->showModal = true;
     }
@@ -162,6 +165,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok / Min</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Tgl. Kadaluarsa</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -196,6 +200,13 @@ new class extends Component {
                                 <span class="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-tighter">Min: {{ $barang->stok_minimal }}</span>
                             </div>
                         </td>
+                        <td class="px-6 py-4 text-center">
+                            @if($barang->tgl_kadaluarsa)
+                                <span class="text-sm text-slate-600">{{ $barang->tgl_kadaluarsa->format('d/m/Y') }}</span>
+                            @else
+                                <span class="text-xs text-slate-400 italic">-</span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             @can('manage barang')
                             <button wire:click="edit({{ $barang->id }})" class="text-amber-600 hover:text-amber-700 font-medium">
@@ -211,7 +222,7 @@ new class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center">
+                        <td colspan="8" class="px-6 py-10 text-center">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 text-slate-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                                 <p class="text-slate-500 italic text-sm">Belum ada data barang.</p>
@@ -288,6 +299,13 @@ new class extends Component {
                         <label class="block text-sm font-bold text-slate-700">Batas Stok Minimal (Alert)</label>
                         <input wire:model="stok_minimal" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok_minimal') border-red-500 @enderror">
                         @error('stok_minimal') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Tgl Kadaluarsa -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-bold text-slate-700">Tgl. Kadaluarsa</label>
+                        <input wire:model="tgl_kadaluarsa" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('tgl_kadaluarsa') border-red-500 @enderror">
+                        @error('tgl_kadaluarsa') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Harga Beli -->

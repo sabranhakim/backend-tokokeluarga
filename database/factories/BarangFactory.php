@@ -32,6 +32,7 @@ class BarangFactory extends Factory
             'harga_jual' => $hargaJual,
             'stok' => $this->faker->numberBetween(0, 500),
             'stok_minimal' => $this->faker->numberBetween(5, 50),
+            'tgl_kadaluarsa' => $this->faker->optional(0.8)->dateTimeBetween('+1 month', '+2 years'),
         ];
     }
 }
