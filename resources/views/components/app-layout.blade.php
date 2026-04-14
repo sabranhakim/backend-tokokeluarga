@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Toko Keluarga - Dashboard</title>
+    <title>Grosir Toko Keluarga - Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -75,25 +75,25 @@
             <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-xl font-semibold text-slate-800">@yield('header', 'Dashboard')</h1>
-                    <div class="hidden lg:flex items-center text-slate-500 text-sm border-l border-slate-200 pl-4 ml-2" 
-                        x-data="{ 
-                            date: '', 
+                    <div class="hidden lg:flex items-center text-slate-500 text-sm border-l border-slate-200 pl-4 ml-2"
+                        x-data="{
+                            date: '',
                             time: '',
                             update() {
                                 const now = new Date();
-                                this.date = now.toLocaleDateString('id-ID', { 
-                                    weekday: 'long', 
-                                    day: 'numeric', 
-                                    month: 'long', 
-                                    year: 'numeric' 
+                                this.date = now.toLocaleDateString('id-ID', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
                                 });
-                                this.time = now.toLocaleTimeString('id-ID', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit', 
-                                    second: '2-digit' 
+                                this.time = now.toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit'
                                 });
                             }
-                        }" 
+                        }"
                         x-init="update(); setInterval(() => update(), 1000)">
                         <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <span x-text="date" class="font-medium"></span>
@@ -118,9 +118,9 @@
     </div>
 
     @livewireScripts
-    
+
     <!-- Toast Notifications -->
-    <div x-data="{ 
+    <div x-data="{
             messages: [],
             remove(id) {
                 this.messages = this.messages.filter(m => m.id !== id)
@@ -133,9 +133,9 @@
         }"
         @notify.window="add($event.detail)"
         class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-80">
-        
+
         <template x-for="message in messages" :key="message.id">
-            <div x-show="true" 
+            <div x-show="true"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform translate-x-8"
                 x-transition:enter-end="opacity-100 transform translate-x-0"
