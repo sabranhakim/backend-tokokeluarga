@@ -14,10 +14,18 @@ class Supplier extends Model
     use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
+        'is_active',
         'nama_supplier',
         'alamat',
         'no_telp',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('active', function ($builder) {
+            $builder->where('is_active', true);
+        });
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

@@ -32,6 +32,12 @@ class AuthController extends Controller
             ]);
         }
 
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Akun Anda telah dinonaktifkan. Silakan hubungi administrator.'],
+            ]);
+        }
+
         $token = $user->createToken($request->device_name)->plainTextToken;
 
         return response()->json([

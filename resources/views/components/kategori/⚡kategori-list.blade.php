@@ -31,10 +31,22 @@ new class extends Component {
     public function with()
     {
         return [
-            'kategoris' => Kategori::where('nama_kategori', 'like', '%' . $this->search . '%')
+            'kategoris' => Kategori::withoutGlobalScope('active')
+                ->where('nama_kategori', 'like', '%' . $this->search . '%')
                 ->latest()
                 ->paginate(20), // Increased pagination for two columns
         ];
+    }
+
+    public function toggleActive($id)
+    {
+        if (!Gate::allows('manage kategori') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengubah status kategori.');
+            return;
+        }
+        $kategori = Kategori::withoutGlobalScope('active')->findOrFail($id);
+        $kategori->update(['is_active' => !$kategori->is_active]);
+        $this->dispatch('notify', 'Status kategori berhasil diubah');
     }
 
     public function updatingSearch()
@@ -65,7 +77,7 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit kategori.');
             return;
         }
-        $kategori = Kategori::findOrFail($id);
+        $kategori = Kategori::withoutGlobalScope('active')->findOrFail($id);
         $this->kategoriId = $kategori->id;
         $this->nama_kategori = $kategori->nama_kategori;
         $this->isEdit = true;
@@ -86,7 +98,7 @@ new class extends Component {
         $validated = $this->validate($validationRules);
 
         if ($this->isEdit) {
-            Kategori::find($this->kategoriId)->update($validated);
+            Kategori::withoutGlobalScope('active')->find($this->kategoriId)->update($validated);
             $message = 'Kategori berhasil diperbarui';
         } else {
             Kategori::create($validated);
@@ -104,7 +116,7 @@ new class extends Component {
             return;
         }
         try {
-            Kategori::destroy($id);
+            Kategori::withoutGlobalScope('active')->destroy($id);
             $this->dispatch('notify', 'Kategori berhasil dihapus');
         } catch (\Exception $e) {
             $this->dispatch('notify', 'Kategori tidak dapat dihapus karena masih digunakan oleh barang.');
@@ -151,16 +163,21 @@ new class extends Component {
                 <table class="w-full text-left">
                     <thead>
                         <tr class="bg-slate-50/50 border-b border-slate-100">
-                            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16">ID</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 text-center">Status</th>
                             <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Kategori</th>
                             <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach($chunk as $kategori)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-slate-500">#{{ $kategori->id }}</td>
-                            <td class="px-6 py-4 font-medium text-slate-900">{{ $kategori->nama_kategori }}</td>
+                        <tr class="hover:bg-slate-50 transition-colors {{ !$kategori->is_active ? 'bg-slate-50/50' : '' }}">
+                            <td class="px-6 py-4 text-center">
+                                <button wire:click="toggleActive({{ $kategori->id }})" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $kategori->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                                    <span class="sr-only">Toggle Active</span>
+                                    <span aria-hidden="true" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $kategori->is_active ? 'translate-x-4' : 'translate-x-0' }}"></span>
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 font-medium {{ $kategori->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $kategori->nama_kategori }}</td>
                             <td class="px-6 py-4 text-right space-x-2">
                                 @can('manage kategori')
                                 <button wire:click="edit({{ $kategori->id }})" class="text-amber-600 hover:text-amber-700 font-medium" title="Edit">

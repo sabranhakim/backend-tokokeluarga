@@ -20,8 +20,31 @@ new class extends Component {
             session()->flash('error', 'Anda tidak memiliki hak akses ke manajemen user.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
-        $this->users = User::with('roles')->get();
+        $this->loadUsers();
         $this->roles = Role::all();
+    }
+
+    public function loadUsers()
+    {
+        $this->users = User::with('roles')->get();
+    }
+
+    public function toggleActive($id)
+    {
+        if (!Gate::allows('manage users') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengubah status user.');
+            return;
+        }
+        
+        if ($id === auth()->id()) {
+            $this->dispatch('notify', 'Anda tidak bisa menonaktifkan akun sendiri!');
+            return;
+        }
+
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => !$user->is_active]);
+        $this->loadUsers();
+        $this->dispatch('notify', 'Status user berhasil diubah');
     }
 
     public function resetFields()
@@ -81,7 +104,7 @@ new class extends Component {
         }
 
         $this->showModal = false;
-        $this->users = User::with('roles')->get();
+        $this->loadUsers();
         $this->dispatch('notify', 'User berhasil disimpan');
     }
 
@@ -106,8 +129,14 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus user.');
             return;
         }
+        
+        if ($id === auth()->id()) {
+            $this->dispatch('notify', 'Anda tidak bisa menghapus akun sendiri!');
+            return;
+        }
+
         User::destroy($id);
-        $this->users = User::with('roles')->get();
+        $this->loadUsers();
         $this->dispatch('notify', 'User berhasil dihapus');
     }
 };
@@ -135,6 +164,7 @@ new class extends Component {
         <table class="w-full text-left">
             <thead>
                 <tr class="bg-slate-50">
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
@@ -143,8 +173,21 @@ new class extends Component {
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @foreach($users as $user)
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="px-6 py-4 font-medium text-slate-900">{{ $user->name }}</td>
+                <tr class="hover:bg-slate-50 transition-colors {{ !$user->is_active ? 'bg-slate-50/50' : '' }}">
+                    <td class="px-6 py-4">
+                        @if($user->id === auth()->id())
+                            <button disabled class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent bg-blue-400 opacity-50 transition-colors duration-200 ease-in-out focus:outline-none" title="Anda tidak bisa menonaktifkan akun sendiri">
+                                <span class="sr-only">Toggle Active</span>
+                                <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform translate-x-5 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                            </button>
+                        @else
+                            <button wire:click="toggleActive({{ $user->id }})" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $user->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                                <span class="sr-only">Toggle Active</span>
+                                <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $user->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                            </button>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 font-medium {{ $user->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $user->name }} @if($user->id === auth()->id()) <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded ml-1">Anda</span> @endif</td>
                     <td class="px-6 py-4 text-slate-600">{{ $user->email }}</td>
                     <td class="px-6 py-4">
                         @foreach($user->roles as $role)
@@ -156,9 +199,11 @@ new class extends Component {
                         <button wire:click="edit({{ $user->id }})" class="text-amber-600 hover:text-amber-700 font-medium" title="Edit">
                             <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         </button>
+                        @if($user->id !== auth()->id())
                         <button wire:click="delete({{ $user->id }})" wire:confirm="Yakin ingin menghapus user ini?" class="text-red-600 hover:text-red-700 font-medium" title="Hapus">
                             <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </button>
+                        @endif
                         @else
                         <span class="text-xs text-slate-400 italic">No Access</span>
                         @endcan

@@ -15,6 +15,7 @@ class Barang extends Model
     use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
+        'is_active',
         'kode_barang',
         'nama_barang',
         'kategori_id',
@@ -25,6 +26,13 @@ class Barang extends Model
         'stok_minimal',
         'tgl_kadaluarsa',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('active', function ($builder) {
+            $builder->where('is_active', true);
+        });
+    }
 
     protected $casts = [
         'tgl_kadaluarsa' => 'date',

@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 new class extends Component {
     public string $email = '';
@@ -15,6 +16,14 @@ new class extends Component {
             'email' => 'required|email',
             'password' => 'required',
         ]);
+
+        $user = User::where('email', $this->email)->first();
+
+        if ($user && !$user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.',
+            ]);
+        }
 
         if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             throw ValidationException::withMessages([

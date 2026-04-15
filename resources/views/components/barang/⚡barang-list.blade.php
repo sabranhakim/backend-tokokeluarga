@@ -42,7 +42,7 @@ new class extends Component {
     public function with()
     {
         return [
-            'barangs' => Barang::with('kategori')
+            'barangs' => Barang::withoutGlobalScope('active')->with('kategori')
                 ->where(function($query) {
                     $query->where('nama_barang', 'like', '%' . $this->search . '%')
                         ->orWhere('kode_barang', 'like', '%' . $this->search . '%');
@@ -51,6 +51,17 @@ new class extends Component {
                 ->paginate(10),
             'kategoris' => Kategori::all(),
         ];
+    }
+
+    public function toggleActive($id)
+    {
+        if (!Gate::allows('manage barang') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengubah status barang.');
+            return;
+        }
+        $barang = Barang::withoutGlobalScope('active')->findOrFail($id);
+        $barang->update(['is_active' => !$barang->is_active]);
+        $this->dispatch('notify', 'Status barang berhasil diubah');
     }
 
     public function updatingSearch()
@@ -89,7 +100,7 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit barang.');
             return;
         }
-        $barang = Barang::findOrFail($id);
+        $barang = Barang::withoutGlobalScope('active')->findOrFail($id);
         $this->barangId = $barang->id;
         $this->kode_barang = $barang->kode_barang;
         $this->nama_barang = $barang->nama_barang;
@@ -118,7 +129,7 @@ new class extends Component {
         $validated = $this->validate($validationRules);
 
         if ($this->isEdit) {
-            Barang::find($this->barangId)->update($validated);
+            Barang::withoutGlobalScope('active')->find($this->barangId)->update($validated);
             $message = 'Barang berhasil diperbarui';
         } else {
             Barang::create($validated);
@@ -135,7 +146,7 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus barang.');
             return;
         }
-        Barang::destroy($id);
+        Barang::withoutGlobalScope('active')->destroy($id);
         $this->dispatch('notify', 'Barang berhasil dihapus');
     }
 };
@@ -173,24 +184,30 @@ new class extends Component {
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-slate-50/50">
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kode</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Barang</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok / Min</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-center">Tgl. Kadaluarsa</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($barangs as $barang)
-                    <tr class="hover:bg-slate-50 transition-colors">
+                    <tr class="hover:bg-slate-50 transition-colors {{ !$barang->is_active ? 'bg-slate-50/50' : '' }}">
+                        <td class="px-6 py-4">
+                            <button wire:click="toggleActive({{ $barang->id }})" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $barang->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                                <span class="sr-only">Toggle Active</span>
+                                <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $barang->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                            </button>
+                        </td>
                         <td class="px-6 py-4">
                             <span class="font-mono text-xs font-bold px-2 py-1 bg-slate-100 text-slate-700 rounded">{{ $barang->kode_barang }}</span>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-slate-900">{{ $barang->nama_barang }}</div>
+                            <div class="text-sm font-medium {{ $barang->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $barang->nama_barang }}</div>
                             <div class="text-xs text-slate-500">{{ $barang->satuan }}</div>
                         </td>
                         <td class="px-6 py-4">
@@ -213,13 +230,6 @@ new class extends Component {
                                 </span>
                                 <span class="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-tighter">Min: {{ $barang->stok_minimal }}</span>
                             </div>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            @if($barang->tgl_kadaluarsa)
-                                <span class="text-sm text-slate-600">{{ $barang->tgl_kadaluarsa->format('d/m/Y') }}</span>
-                            @else
-                                <span class="text-xs text-slate-400 italic">-</span>
-                            @endif
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             @can('manage barang')

@@ -33,11 +33,25 @@ new class extends Component {
     public function with()
     {
         return [
-            'suppliers' => Supplier::where('nama_supplier', 'like', '%' . $this->search . '%')
-                ->orWhere('no_telp', 'like', '%' . $this->search . '%')
+            'suppliers' => Supplier::withoutGlobalScope('active')
+                ->where(function($query) {
+                    $query->where('nama_supplier', 'like', '%' . $this->search . '%')
+                        ->orWhere('no_telp', 'like', '%' . $this->search . '%');
+                })
                 ->latest()
                 ->paginate(10),
         ];
+    }
+
+    public function toggleActive($id)
+    {
+        if (!Gate::allows('manage supplier') && !auth()->user()->hasRole('admin')) {
+            $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengubah status supplier.');
+            return;
+        }
+        $supplier = Supplier::withoutGlobalScope('active')->findOrFail($id);
+        $supplier->update(['is_active' => !$supplier->is_active]);
+        $this->dispatch('notify', 'Status supplier berhasil diubah');
     }
 
     public function updatingSearch()
@@ -70,7 +84,7 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk mengedit supplier.');
             return;
         }
-        $supplier = Supplier::findOrFail($id);
+        $supplier = Supplier::withoutGlobalScope('active')->findOrFail($id);
         $this->supplierId = $supplier->id;
         $this->nama_supplier = $supplier->nama_supplier;
         $this->alamat = $supplier->alamat;
@@ -88,7 +102,7 @@ new class extends Component {
         $validated = $this->validate();
 
         if ($this->isEdit) {
-            Supplier::find($this->supplierId)->update($validated);
+            Supplier::withoutGlobalScope('active')->find($this->supplierId)->update($validated);
             $message = 'Supplier berhasil diperbarui';
         } else {
             Supplier::create($validated);
@@ -106,7 +120,7 @@ new class extends Component {
             return;
         }
         try {
-            Supplier::destroy($id);
+            Supplier::withoutGlobalScope('active')->destroy($id);
             $this->dispatch('notify', 'Supplier berhasil dihapus');
         } catch (\Exception $e) {
             $this->dispatch('notify', 'Supplier tidak dapat dihapus because masih memiliki riwayat transaksi.');
@@ -147,6 +161,7 @@ new class extends Component {
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-slate-50/50">
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Supplier</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">No. Telp</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Alamat</th>
@@ -155,8 +170,14 @@ new class extends Component {
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($suppliers as $supplier)
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 font-medium text-slate-900">{{ $supplier->nama_supplier }}</td>
+                    <tr class="hover:bg-slate-50 transition-colors {{ !$supplier->is_active ? 'bg-slate-50/50' : '' }}">
+                        <td class="px-6 py-4 text-center">
+                            <button wire:click="toggleActive({{ $supplier->id }})" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $supplier->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                                <span class="sr-only">Toggle Active</span>
+                                <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $supplier->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                            </button>
+                        </td>
+                        <td class="px-6 py-4 font-medium {{ $supplier->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $supplier->nama_supplier }}</td>
                         <td class="px-6 py-4 text-sm text-slate-600 font-mono">{{ $supplier->no_telp }}</td>
                         <td class="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">{{ $supplier->alamat }}</td>
                         <td class="px-6 py-4 text-right space-x-2">
@@ -174,7 +195,7 @@ new class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-10 text-center text-slate-500 italic text-sm">Belum ada data supplier.</td>
+                        <td colspan="5" class="px-6 py-10 text-center text-slate-500 italic text-sm">Belum ada data supplier.</td>
                     </tr>
                     @endforelse
                 </tbody>
