@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BarangController;
 use App\Http\Controllers\Api\KategoriController;
 use App\Http\Controllers\Api\PenerimaanBarangController;
@@ -7,12 +8,28 @@ use App\Http\Controllers\Api\SupplierController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Public Auth Routes
+Route::post('/login', [AuthController::class, 'login']);
+
+// Debug Route (Temporary)
+Route::post('/debug-request', function (Request $request) {
+    return response()->json([
+        'headers' => $request->headers->all(),
+        'all_data' => $request->all(),
+        'raw_content' => $request->getContent(),
+        'content_type' => $request->header('Content-Type'),
+    ]);
+});
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
 // API Routes for Toko Keluarga (Receipt System)
 Route::group(['middleware' => 'auth:sanctum'], function () {
+    // Logout route
+    Route::post('/logout', [AuthController::class, 'logout']);
+
     // Barang API with permissions
     Route::get('barangs', [BarangController::class, 'index'])->middleware('can:view barang');
     Route::get('barangs/{id}', [BarangController::class, 'show'])->middleware('can:view barang');

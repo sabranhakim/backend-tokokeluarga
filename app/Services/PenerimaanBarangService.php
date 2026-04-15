@@ -5,15 +5,21 @@ namespace App\Services;
 use App\Models\Barang;
 use App\Models\DetailPenerimaan;
 use App\Models\PenerimaanBarang;
+use App\Models\User;
+use App\Notifications\NewPenerimaanNotification;
+use App\Jobs\SendWhatsAppNotificationJob;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class PenerimaanBarangService
 {
     protected $cloudinaryService;
+    protected $whatsappService;
 
-    public function __construct(CloudinaryService $cloudinaryService)
+    public function __construct(CloudinaryService $cloudinaryService, WhatsAppService $whatsappService)
     {
         $this->cloudinaryService = $cloudinaryService;
+        $this->whatsappService = $whatsappService;
     }
 
     /**
@@ -54,8 +60,58 @@ class PenerimaanBarangService
                 $barang->increment('stok', $item['jumlah']);
             }
 
-            return $penerimaan->load('detailPenerimaans.barang', 'supplier', 'user');
+            // After all details are saved, reload relationships for the notification
+            $penerimaan->load(['supplier', 'user', 'detailPenerimaans.barang']);
+
+            // Send notifications after the transaction is successfully committed
+            DB::afterCommit(function () use ($penerimaan) {
+                // Internal Database Notification
+                $users = User::all();
+                Notification::send($users, new NewPenerimaanNotification($penerimaan));
+
+                // Dispatch WhatsApp Job with delay
+                $this->dispatchWhatsAppJob($penerimaan);
+            });
+
+            return $penerimaan;
         });
+    }
+
+    /**
+     * Dispatch WhatsApp Notification Job.
+     */
+    protected function dispatchWhatsAppJob(PenerimaanBarang $penerimaan): void
+    {
+        $supplier = $penerimaan->supplier;
+
+        if (!$supplier || !$supplier->no_telp) {
+            return;
+        }
+
+        $itemsList = "";
+        foreach ($penerimaan->detailPenerimaans as $detail) {
+            $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
+            $itemsList .= "- {$namaBarang}: {$detail->jumlah} unit\n";
+        }
+
+        $message = "📦 *PENERIMAAN BARANG BERHASIL*\n\n" .
+                   "Halo *{$supplier->nama_supplier}*,\n" .
+                   "Barang kiriman Anda telah kami terima di gudang.\n\n" .
+                   "Detail:\n" .
+                   "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
+                   "📅 Tanggal: " . $penerimaan->tgl_terima->format('d-m-Y') . "\n\n" .
+                   "Daftar Barang:\n" .
+                   $itemsList . "\n" .
+                   "_Catatan: Foto bukti fisik telah diarsipkan secara digital di sistem kami._\n\n" .
+                   "Terima kasih telah menjadi supplier kami.\n" .
+                   "---------------------------\n" .
+                   "_Pesan Otomatis Grosir Toko Keluarga_";
+
+        // Dispatch Job dengan delay 2 detik (lebih cepat karena tidak perlu polling gambar)
+        SendWhatsAppNotificationJob::dispatch(
+            $supplier->no_telp,
+            $message
+        )->delay(now()->addSeconds(2));
     }
 
     /**

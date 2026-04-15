@@ -3,9 +3,6 @@
 namespace App\Observers;
 
 use App\Models\PenerimaanBarang;
-use App\Models\User;
-use App\Notifications\NewPenerimaanNotification;
-use Illuminate\Support\Facades\Notification;
 
 class PenerimaanBarangObserver
 {
@@ -14,10 +11,7 @@ class PenerimaanBarangObserver
      */
     public function created(PenerimaanBarang $penerimaanBarang): void
     {
-        // Load relationships needed for notification message
-        $penerimaanBarang->load(['supplier', 'user']);
-        
-        $users = User::all();
-        Notification::send($users, new NewPenerimaanNotification($penerimaanBarang));
+        // Notifikasi dipindahkan ke PenerimaanBarangService
+        // untuk memastikan detail barang sudah tersimpan sebelum dikirim.
     }
 }
