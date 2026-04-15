@@ -20,9 +20,38 @@ new class extends Component {
             session()->flash('error', 'Anda tidak memiliki hak akses ke manajemen role.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
-        
+
         $this->roles = Role::with('permissions')->get();
         $this->permissions = Permission::all();
+    }
+
+    public function getGroupedPermissionsProperty()
+    {
+        $groups = [
+            'Umum' => ['view dashboard', 'manage activity'],
+            'User & Role' => ['manage users', 'manage roles'],
+            'Master Barang' => ['view barang', 'manage barang', 'view kategori', 'manage kategori'],
+            'Supplier' => ['view supplier', 'manage supplier'],
+            'Penerimaan' => ['view penerimaan', 'create penerimaan', 'verify penerimaan', 'delete penerimaan'],
+            'Laporan' => ['manage laporan'],
+            'Trash' => ['view trash', 'manage trash', 'restore trash', 'delete permanently trash'],
+        ];
+
+        $grouped = [];
+        $assigned = [];
+
+        foreach ($groups as $label => $perms) {
+            $grouped[$label] = $this->permissions->whereIn('name', $perms);
+            $assigned = array_merge($assigned, $perms);
+        }
+
+        // Catch-all for any permissions not in the groups
+        $others = $this->permissions->whereNotIn('name', $assigned);
+        if ($others->count() > 0) {
+            $grouped['Lainnya'] = $others;
+        }
+
+        return $grouped;
     }
 
     public function resetFields()
@@ -110,7 +139,7 @@ new class extends Component {
                 <tr class="bg-slate-50">
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Role</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Permission</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                    <th class="px-10 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -159,22 +188,52 @@ new class extends Component {
                     @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Permissions</label>
-                    <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl max-h-60 overflow-y-auto">
-                        @foreach($permissions as $perm)
-                        <label class="flex items-center space-x-2 p-1 hover:bg-white rounded transition-colors cursor-pointer">
-                            <input wire:model="selected_permissions" type="checkbox" value="{{ $perm->name }}" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
-                            <span class="text-sm text-slate-600">{{ $perm->name }}</span>
-                        </label>
+                    <label class="block text-sm font-medium text-slate-700 mb-3">Permissions</label>
+                    <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                        @foreach($this->groupedPermissions as $group => $perms)
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                            <div class="flex justify-between items-center mb-3">
+                                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ $group }}</h5>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                @foreach($perms as $perm)
+                                <label class="flex items-center space-x-3 p-2 hover:bg-white rounded-lg transition-all cursor-pointer border border-transparent hover:border-slate-200 group">
+                                    <div class="relative flex items-center">
+                                        <input wire:model="selected_permissions" type="checkbox" value="{{ $perm->name }}"
+                                            class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 transition-colors">
+                                    </div>
+                                    <span class="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">{{ $perm->name }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
                         @endforeach
                     </div>
                 </div>
             </div>
-            <div class="px-6 py-4 bg-slate-50 flex justify-end space-x-3">
-                <button wire:click="$set('showModal', false)" class="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Batal</button>
-                <button wire:click="save" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition-colors">Simpan</button>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button wire:click="$set('showModal', false)" class="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors">Batal</button>
+                <button wire:click="save" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95">
+                    {{ $isEdit ? 'Simpan Perubahan' : 'Buat Role' }}
+                </button>
             </div>
         </div>
     </div>
     @endif
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </div>

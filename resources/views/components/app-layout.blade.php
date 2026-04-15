@@ -7,63 +7,151 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .sidebar-active {
+            background: linear-gradient(to right, #eff6ff, #ffffff);
+            color: #2563eb;
+            font-weight: 600;
+            box-shadow: inset 4px 0 0 #2563eb;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900 antialiased">
+<body class="bg-[#f8fafc] font-sans text-slate-900 antialiased overflow-hidden" x-data="{ sidebarOpen: false }">
     <div class="flex h-screen overflow-hidden">
+        
+        <!-- Mobile Sidebar Overlay -->
+        <div x-show="sidebarOpen" 
+             x-transition:enter="transition-opacity ease-linear duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="sidebarOpen = false"
+             class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden" x-cloak></div>
+
         <!-- Sidebar -->
-        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200">
-            <div class="flex items-center justify-center h-16 border-b border-slate-200">
-                <span class="text-xl font-bold text-blue-600">Toko Keluarga</span>
-            </div>
-            <nav class="flex-1 overflow-y-auto py-4">
-                <a href="{{ route('dashboard') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('dashboard') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                    Dashboard
-                </a>
-                <a href="{{ route('barang.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('barang.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                    Stok Barang
-                </a>
-                <a href="{{ route('kategori.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('kategori.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                    Kategori
-                </a>
-                <a href="{{ route('supplier.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('supplier.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    Supplier
-                </a>
-                <a href="{{ route('penerimaan.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('penerimaan.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                    Penerimaan Barang
-                </a>
-                <a href="{{ route('laporan.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('laporan.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H5m14 0h-2a4 4 0 00-4 4v2m-2 4h.01M9 21h6a2 2 0 002-2V5a2 2 0 00-2-2H9a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    Laporan
-                </a>
-                <div class="px-6 py-4">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sistem</p>
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-xl lg:shadow-none">
+            
+            <!-- Logo Area -->
+            <div class="flex items-center justify-between h-20 px-6 border-b border-slate-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    </div>
+                    <span class="text-xl font-extrabold tracking-tight text-slate-800">Toko<span class="text-blue-600">Keluarga</span></span>
                 </div>
-                <a href="{{ route('activity.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('activity.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Log Aktivitas
+                <button @click="sidebarOpen = false" class="p-2 rounded-lg text-slate-400 hover:bg-slate-50 lg:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto py-6 space-y-1 custom-scrollbar px-3">
+                <div class="px-4 mb-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Menu Utama</p>
+                </div>
+                
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('dashboard') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('dashboard') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </div>
+                    <span class="ml-3">Dashboard</span>
                 </a>
-                <a href="{{ route('users.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('users.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                    Manajemen User
+
+                <div class="px-4 mt-6 mb-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Inventory</p>
+                </div>
+
+                <a href="{{ route('barang.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('barang.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('barang.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <span class="ml-3">Stok Barang</span>
                 </a>
-                <a href="{{ route('roles.index') }}" class="flex items-center px-6 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ request()->routeIs('roles.*') ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    Manajemen Role
+
+                <a href="{{ route('kategori.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('kategori.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('kategori.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                    </div>
+                    <span class="ml-3">Kategori</span>
+                </a>
+
+                <a href="{{ route('supplier.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('supplier.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('supplier.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <span class="ml-3">Supplier</span>
+                </a>
+
+                <div class="px-4 mt-6 mb-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Transaksi</p>
+                </div>
+
+                <a href="{{ route('penerimaan.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('penerimaan.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('penerimaan.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    </div>
+                    <span class="ml-3">Penerimaan Barang</span>
+                </a>
+
+                <a href="{{ route('laporan.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('laporan.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('laporan.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H5m14 0h-2a4 4 0 00-4 4v2m-2 4h.01M9 21h6a2 2 0 002-2V5a2 2 0 00-2-2H9a2 2 0 00-2-2H9a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <span class="ml-3">Laporan</span>
+                </a>
+
+                <div class="px-4 mt-6 mb-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Sistem</p>
+                </div>
+
+                <a href="{{ route('activity.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('activity.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('activity.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <span class="ml-3">Log Aktivitas</span>
+                </a>
+
+                <a href="{{ route('users.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('users.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('users.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    </div>
+                    <span class="ml-3">Manajemen User</span>
+                </a>
+
+                <a href="{{ route('roles.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {{ request()->routeIs('roles.*') ? 'sidebar-active shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('roles.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <span class="ml-3">Manajemen Role</span>
                 </a>
             </nav>
-            <div class="p-4 border-t border-slate-200">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+
+            <!-- User Footer -->
+            <div class="p-4 border-t border-slate-50 bg-slate-50/50">
+                <div class="flex items-center p-3 bg-white rounded-2xl shadow-sm border border-slate-100">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
                         {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
-                        <p class="text-xs text-slate-500">Administrator</p>
+                    <div class="ml-3 flex-1 overflow-hidden">
+                        <p class="text-sm font-bold text-slate-800 truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-semibold">Administrator</p>
                     </div>
                 </div>
             </div>
@@ -72,47 +160,62 @@
         <!-- Main Content -->
         <main class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Header -->
-            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+            <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-xl font-semibold text-slate-800">@yield('header', 'Dashboard')</h1>
-                    <div class="hidden lg:flex items-center text-slate-500 text-sm border-l border-slate-200 pl-4 ml-2"
+                    <button @click="sidebarOpen = true" class="p-2 rounded-xl bg-slate-50 text-slate-600 lg:hidden hover:bg-slate-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800 tracking-tight">@yield('header', 'Dashboard')</h1>
+                        <p class="text-[11px] text-slate-400 font-medium hidden md:block">Selamat datang kembali, {{ explode(' ', auth()->user()->name ?? 'Admin')[0] }}!</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <!-- Dynamic Date & Time -->
+                    <div class="hidden xl:flex items-center space-x-3 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100"
                         x-data="{
                             date: '',
                             time: '',
                             update() {
                                 const now = new Date();
                                 this.date = now.toLocaleDateString('id-ID', {
-                                    weekday: 'long',
                                     day: 'numeric',
-                                    month: 'long',
+                                    month: 'short',
                                     year: 'numeric'
                                 });
                                 this.time = now.toLocaleTimeString('id-ID', {
                                     hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit'
+                                    minute: '2-digit'
                                 });
                             }
                         }"
-                        x-init="update(); setInterval(() => update(), 1000)">
-                        <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <span x-text="date" class="font-medium"></span>
-                        <span class="mx-3 text-slate-300">|</span>
-                        <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span x-text="time" class="font-mono font-bold text-slate-700"></span>
+                        x-init="update(); setInterval(() => update(), 60000)">
+                        <div class="flex items-center text-slate-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span x-text="date" class="text-xs font-bold uppercase tracking-wider"></span>
+                        </div>
+                        <div class="w-px h-4 bg-slate-200"></div>
+                        <div class="flex items-center text-blue-600">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span x-text="time" class="text-xs font-black"></span>
+                        </div>
                     </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <livewire:notification-header />
-                    <div class="h-8 w-px bg-slate-200 mx-2"></div>
-                    <livewire:auth.logout />
+
+                    <div class="flex items-center space-x-1 md:space-x-2">
+                        <livewire:notification-header />
+                        <div class="h-8 w-px bg-slate-100 mx-1"></div>
+                        <livewire:auth.logout />
+                    </div>
                 </div>
             </header>
 
             <!-- Scrollable Page Content -->
-            <div class="flex-1 overflow-y-auto">
-                {{ $slot ?? '' }}
-                @yield('content')
+            <div class="flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc] p-4 lg:p-8">
+                <div class="max-w-7xl mx-auto">
+                    {{ $slot ?? '' }}
+                    @yield('content')
+                </div>
             </div>
         </main>
     </div>
@@ -132,25 +235,30 @@
             }
         }"
         @notify.window="add($event.detail)"
-        class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-80">
+        class="fixed top-6 right-6 z-[9999] flex flex-col gap-3 w-80 pointer-events-none">
 
         <template x-for="message in messages" :key="message.id">
             <div x-show="true"
                 x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform translate-x-8"
-                x-transition:enter-end="opacity-100 transform translate-x-0"
+                x-transition:enter-start="opacity-0 transform translate-x-8 scale-95"
+                x-transition:enter-end="opacity-100 transform translate-x-0 scale-100"
                 x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform translate-x-0"
-                x-transition:leave-end="opacity-0 transform translate-x-8"
+                x-transition:leave-start="opacity-100 transform translate-x-0 scale-100"
+                x-transition:leave-end="opacity-0 transform translate-x-8 scale-95"
                 :class="{
-                    'bg-emerald-600': message.type === 'success',
-                    'bg-red-600': message.type === 'error',
-                    'bg-blue-600': message.type === 'info'
+                    'bg-emerald-500 border-emerald-600 shadow-emerald-100': message.type === 'success',
+                    'bg-rose-500 border-rose-600 shadow-rose-100': message.type === 'error',
+                    'bg-blue-500 border-blue-600 shadow-blue-100': message.type === 'info'
                 }"
-                class="text-white px-4 py-3 rounded-lg shadow-lg flex justify-between items-start pointer-events-auto">
-                <p x-text="message.text" class="text-sm font-medium"></p>
-                <button @click="remove(message.id)" class="ml-2 text-white/80 hover:text-white">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                class="text-white px-4 py-4 rounded-2xl shadow-2xl border flex items-start pointer-events-auto relative overflow-hidden group">
+                <!-- Background Decorative Circle -->
+                <div class="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+                
+                <div class="flex-1 pr-4 relative">
+                    <p x-text="message.text" class="text-sm font-bold leading-tight"></p>
+                </div>
+                <button @click="remove(message.id)" class="text-white/60 hover:text-white transition-colors relative">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
         </template>
