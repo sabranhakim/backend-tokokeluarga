@@ -29,7 +29,7 @@ class WhatsAppService
             ])->asForm()->post($this->baseUrl, [
                 'target'  => $target,
                 'message' => $message,
-                'delay'   => '2',
+                'delay'   => 1,
             ]);
 
             if ($response->successful()) {

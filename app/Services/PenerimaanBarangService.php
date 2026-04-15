@@ -107,11 +107,11 @@ class PenerimaanBarangService
                    "---------------------------\n" .
                    "_Pesan Otomatis Grosir Toko Keluarga_";
 
-        // Dispatch Job dengan delay 2 detik (lebih cepat karena tidak perlu polling gambar)
+        // Dispatch Job (dikirim segera setelah transaksi selesai)
         SendWhatsAppNotificationJob::dispatch(
             $supplier->no_telp,
             $message
-        )->delay(now()->addSeconds(2));
+        )->delay(now()->addSeconds(1));
     }
 
     /**
