@@ -194,7 +194,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody wire:loading.class="hidden" class="divide-y divide-slate-100">
                     @forelse($barangs as $barang)
                     <tr class="hover:bg-slate-50 transition-colors {{ !$barang->is_active ? 'bg-slate-50/50' : '' }}">
                         <td class="px-6 py-4">
@@ -254,6 +254,24 @@ new class extends Component {
                         </td>
                     </tr>
                     @endforelse
+                </tbody>
+                <!-- Skeleton Loading -->
+                <tbody wire:loading class="divide-y divide-slate-100">
+                    @for($i = 0; $i < 5; $i++)
+                    <tr>
+                        <td class="px-6 py-4"><div class="h-6 w-11 skeleton"></div></td>
+                        <td class="px-6 py-4"><div class="h-6 w-16 skeleton"></div></td>
+                        <td class="px-6 py-4">
+                            <div class="h-4 w-32 skeleton mb-2"></div>
+                            <div class="h-3 w-12 skeleton"></div>
+                        </td>
+                        <td class="px-6 py-4"><div class="h-4 w-20 skeleton"></div></td>
+                        <td class="px-6 py-4"><div class="h-4 w-24 skeleton ml-auto"></div></td>
+                        <td class="px-6 py-4"><div class="h-4 w-24 skeleton ml-auto"></div></td>
+                        <td class="px-6 py-4 flex justify-center"><div class="h-8 w-10 skeleton rounded-full"></div></td>
+                        <td class="px-6 py-4"><div class="h-6 w-16 skeleton ml-auto"></div></td>
+                    </tr>
+                    @endfor
                 </tbody>
             </table>
         </div>

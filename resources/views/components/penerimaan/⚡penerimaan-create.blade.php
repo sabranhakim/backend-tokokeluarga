@@ -107,18 +107,63 @@ new class extends Component {
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">Tanggal Terima</label>
-                            <input wire:model="tgl_terima" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('tgl_terima') border-red-500 @enderror">
+                            <div class="relative group" 
+                                 wire:ignore 
+                                 x-data="{ 
+                                    value: @entangle('tgl_terima'),
+                                    instance: null,
+                                    init() {
+                                        this.instance = flatpickr($refs.input, {
+                                            dateFormat: 'Y-m-d',
+                                            locale: 'id',
+                                            onChange: (selectedDates, dateStr) => {
+                                                this.value = dateStr;
+                                            }
+                                        });
+                                        this.$watch('value', (val) => {
+                                            if (this.instance.currentDateStr !== val) {
+                                                this.instance.setDate(val);
+                                            }
+                                        });
+                                    }
+                                 }">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <input x-ref="input" 
+                                       type="text" 
+                                       readonly
+                                       class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white cursor-pointer @error('tgl_terima') border-red-500 @enderror"
+                                       placeholder="Pilih Tanggal">
+                            </div>
                             @error('tgl_terima') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">Supplier</label>
-                            <select wire:model="supplier_id" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('supplier_id') border-red-500 @enderror">
-                                <option value="">Pilih Supplier</option>
-                                @foreach($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
-                                @endforeach
-                            </select>
+                            <div wire:ignore x-data="{ 
+                                value: @entangle('supplier_id'),
+                                ts: null,
+                                init() {
+                                    this.ts = new TomSelect($refs.select, {
+                                        onChange: (val) => { this.value = val }
+                                    });
+                                    this.$watch('value', (val) => {
+                                        if (val !== this.ts.getValue()) {
+                                            this.ts.setValue(val);
+                                        }
+                                    });
+                                }
+                            }">
+                                <select x-ref="select" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('supplier_id') border-red-500 @enderror">
+                                    <option value="">Pilih Supplier</option>
+                                    @foreach($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             @error('supplier_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                         </div>
 
@@ -164,15 +209,30 @@ new class extends Component {
                     <div class="p-6">
                         <div class="space-y-4">
                             @foreach($items as $index => $item)
-                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
+                            <div wire:key="item-{{ $index }}" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
                                 <div class="md:col-span-7">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Barang</label>
-                                    <select wire:model="items.{{ $index }}.barang_id" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                        <option value="">Pilih Barang</option>
-                                        @foreach($barangs as $barang)
-                                            <option value="{{ $barang->id }}">{{ $barang->kode_barang }} - {{ $barang->nama_barang }} ({{ $barang->satuan }})</option>
-                                        @endforeach
-                                    </select>
+                                    <div wire:ignore x-data="{ 
+                                        value: @entangle('items.' . $index . '.barang_id'),
+                                        ts: null,
+                                        init() {
+                                            this.ts = new TomSelect($refs.select, {
+                                                onChange: (val) => { this.value = val }
+                                            });
+                                            this.$watch('value', (val) => {
+                                                if (val !== this.ts.getValue()) {
+                                                    this.ts.setValue(val);
+                                                }
+                                            });
+                                        }
+                                    }">
+                                        <select x-ref="select" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                            <option value="">Pilih Barang</option>
+                                            @foreach($barangs as $barang)
+                                                <option value="{{ $barang->id }}">{{ $barang->kode_barang }} - {{ $barang->nama_barang }} ({{ $barang->satuan }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                     @error("items.$index.barang_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="md:col-span-4">

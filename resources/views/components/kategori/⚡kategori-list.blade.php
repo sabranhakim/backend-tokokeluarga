@@ -168,7 +168,7 @@ new class extends Component {
                             <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody wire:loading.class="hidden" class="divide-y divide-slate-100">
                         @foreach($chunk as $kategori)
                         <tr class="hover:bg-slate-50 transition-colors {{ !$kategori->is_active ? 'bg-slate-50/50' : '' }}">
                             <td class="px-6 py-4 text-center">
@@ -192,6 +192,16 @@ new class extends Component {
                             </td>
                         </tr>
                         @endforeach
+                    </tbody>
+                    <!-- Skeleton Loading -->
+                    <tbody wire:loading class="divide-y divide-slate-100">
+                        @for($i = 0; $i < 5; $i++)
+                        <tr>
+                            <td class="px-6 py-4 text-center"><div class="h-5 w-9 skeleton mx-auto"></div></td>
+                            <td class="px-6 py-4"><div class="h-5 w-32 skeleton"></div></td>
+                            <td class="px-6 py-4 text-right"><div class="h-5 w-16 skeleton ml-auto"></div></td>
+                        </tr>
+                        @endfor
                     </tbody>
                 </table>
             </div>

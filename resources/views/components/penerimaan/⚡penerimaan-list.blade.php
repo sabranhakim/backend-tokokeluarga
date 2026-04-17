@@ -93,7 +93,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody wire:loading.class="hidden" class="divide-y divide-slate-100">
                     @forelse($penerimaans as $penerimaan)
                     <tr class="hover:bg-slate-50/50 transition-colors">
                         <td class="px-6 py-4 font-mono text-sm font-bold text-slate-700">{{ $penerimaan->no_terima }}</td>
@@ -134,6 +134,19 @@ new class extends Component {
                         <td colspan="6" class="px-6 py-10 text-center text-slate-500 italic text-sm">Belum ada riwayat penerimaan barang.</td>
                     </tr>
                     @endforelse
+                </tbody>
+                <!-- Skeleton Loading -->
+                <tbody wire:loading class="divide-y divide-slate-100">
+                    @for($i = 0; $i < 5; $i++)
+                    <tr>
+                        <td class="px-6 py-4"><div class="h-5 w-32 skeleton font-mono"></div></td>
+                        <td class="px-6 py-4"><div class="h-4 w-20 skeleton"></div></td>
+                        <td class="px-6 py-4"><div class="h-5 w-40 skeleton"></div></td>
+                        <td class="px-6 py-4"><div class="h-4 w-24 skeleton"></div></td>
+                        <td class="px-6 py-4"><div class="h-6 w-16 skeleton rounded-full"></div></td>
+                        <td class="px-6 py-4 text-right"><div class="h-6 w-16 skeleton ml-auto"></div></td>
+                    </tr>
+                    @endfor
                 </tbody>
             </table>
         </div>
