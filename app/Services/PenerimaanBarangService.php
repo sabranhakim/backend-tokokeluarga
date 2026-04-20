@@ -91,7 +91,7 @@ class PenerimaanBarangService
         $itemsList = "";
         foreach ($penerimaan->detailPenerimaans as $detail) {
             $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
-            $itemsList .= "- {$namaBarang}: {$detail->jumlah} unit\n";
+            $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
         }
 
         $message = "📦 *PENERIMAAN BARANG BERHASIL*\n\n" .
@@ -100,6 +100,7 @@ class PenerimaanBarangService
                    "Detail:\n" .
                    "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
                    "📅 Tanggal: " . $penerimaan->tgl_terima->format('d-m-Y') . "\n\n" .
+                   "Penerima: *{$penerimaan->user->name}*\n\n" .
                    "Daftar Barang:\n" .
                    $itemsList . "\n" .
                    "_Catatan: Foto bukti fisik telah diarsipkan secara digital di sistem kami._\n\n" .
