@@ -4,6 +4,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use Illuminate\Support\Facades\RateLimiter;
 
 new class extends Component {
     public string $email = '';
@@ -12,6 +13,15 @@ new class extends Component {
 
     public function login()
     {
+        $throttleKey = strtolower($this->email).'|'.request()->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            throw ValidationException::withMessages([
+                'email' => "Terlalu banyak percobaan login. Silakan coba lagi dalam $seconds detik.",
+            ]);
+        }
+
         $this->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -26,11 +36,13 @@ new class extends Component {
         }
 
         if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+            RateLimiter::hit($throttleKey);
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
 
+        RateLimiter::clear($throttleKey);
         session()->regenerate();
 
         return redirect()->intended(route('dashboard'));

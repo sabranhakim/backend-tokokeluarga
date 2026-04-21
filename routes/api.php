@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public Auth Routes
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // Debug Route (Temporary)
 Route::post('/debug-request', function (Request $request) {
@@ -19,14 +19,14 @@ Route::post('/debug-request', function (Request $request) {
         'raw_content' => $request->getContent(),
         'content_type' => $request->header('Content-Type'),
     ]);
-});
+})->middleware('throttle:api');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'throttle:api']);
 
 // API Routes for Toko Keluarga (Receipt System)
-Route::group(['middleware' => 'auth:sanctum'], function () {
+Route::group(['middleware' => ['auth:sanctum', 'throttle:api']], function () {
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout']);
 

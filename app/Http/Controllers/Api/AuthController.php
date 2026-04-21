@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -24,9 +25,20 @@ class AuthController extends Controller
             'device_name' => 'required',
         ]);
 
+        $throttleKey = strtolower($request->email).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return response()->json([
+                'status' => 'error',
+                'message' => "Too many login attempts. Please try again in $seconds seconds.",
+            ], 429);
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($throttleKey);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -38,6 +50,7 @@ class AuthController extends Controller
             ]);
         }
 
+        RateLimiter::clear($throttleKey);
         $token = $user->createToken($request->device_name)->plainTextToken;
 
         return response()->json([
