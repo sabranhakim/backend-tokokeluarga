@@ -40,13 +40,13 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey);
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => ['Email atau password yang Anda masukkan salah.'],
             ]);
         }
 
         if (! $user->is_active) {
             throw ValidationException::withMessages([
-                'email' => ['Akun Anda telah dinonaktifkan. Silakan hubungi administrator.'],
+                'email' => ['Akun Anda telah dinonaktifkan. Silakan hubungi administrator untuk informasi lebih lanjut.'],
             ]);
         }
 
