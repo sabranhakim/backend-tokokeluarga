@@ -16,14 +16,16 @@ Sistem manajemen inventaris dan operasional Toko Keluarga berbasis web (Dashboar
 - **Manajemen User & Hak Akses**:
     - Pengaturan pengguna sistem.
     - Manajemen Role & Permission menggunakan `spatie/laravel-permission`.
+- **Notifikasi**: Integrasi notifikasi WhatsApp menggunakan "fonnte".
 
 ## Tech Stack
 
 - **Framework**: Laravel 13 (PHP 8.3+)
-- **Frontend UI**: Livewire 3 & Tailwind CSS
+- **Frontend UI**: Livewire 4 & Tailwind CSS 4
 - **Database**: MySQL / SQLite
 - **Media Storage**: Cloudinary (untuk integrasi foto bon)
 - **Authentication**: Laravel Sanctum (API) & Session (Web)
+- **Logging**: Spatie Activitylog
 
 ## Persyaratan Sistem
 
@@ -39,28 +41,30 @@ Sistem manajemen inventaris dan operasional Toko Keluarga berbasis web (Dashboar
     cd backend-tokokeluarga
     ```
 
-2.  **Instal Dependensi**
+2.  **Instal Dependensi & Setup**
     ```bash
-    composer install
-    npm install && npm run build
+    composer setup
     ```
+    *Perintah ini akan menjalankan instalasi composer, npm, migrasi, dan build frontend secara otomatis.*
 
 3.  **Konfigurasi Environment**
-    Salin file `.env.example` menjadi `.env` dan sesuaikan konfigurasi database serta Cloudinary.
-    ```bash
-    cp .env.example .env
-    php artisan key:generate
-    ```
+    Sesuaikan konfigurasi database serta Cloudinary di file `.env`.
 
 4.  **Migrasi & Seeder**
     ```bash
     php artisan migrate --seed
     ```
 
-5.  **Jalankan Server**
+5.  **Jalankan Server Development**
     ```bash
-    php artisan serve
+    npm run dev
     ```
+    *Menjalankan server Laravel, queue, logs, dan Vite secara bersamaan.*
+
+## Pengujian
+```bash
+php artisan test
+```
 
 ## Lisensi
 
