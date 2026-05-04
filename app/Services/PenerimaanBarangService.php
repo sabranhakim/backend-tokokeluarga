@@ -136,7 +136,21 @@ class PenerimaanBarangService
             // 2. Update stock for each item
             foreach ($penerimaan->detailPenerimaans as $detail) {
                 $barang = Barang::where('id', $detail->barang_id)->lockForUpdate()->firstOrFail();
+                $oldStok = $barang->stok;
                 $barang->increment('stok', $detail->jumlah);
+
+                // Log detailed stock movement
+                activity()
+                    ->performedOn($barang)
+                    ->causedBy(auth()->user())
+                    ->withProperties([
+                        'old_stok' => $oldStok,
+                        'new_stok' => $barang->stok,
+                        'jumlah_masuk' => $detail->jumlah,
+                        'no_terima' => $penerimaan->no_terima,
+                        'tipe' => 'masuk'
+                    ])
+                    ->log("Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} melalui verifikasi penerimaan {$penerimaan->no_terima}");
             }
 
             return $penerimaan;
