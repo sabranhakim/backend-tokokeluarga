@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Barang extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, HasUuids;
 
     protected $fillable = [
         'is_active',

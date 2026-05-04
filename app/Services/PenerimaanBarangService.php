@@ -39,6 +39,7 @@ class PenerimaanBarangService
 
             // 1. Create PenerimaanBarang Header
             $penerimaan = PenerimaanBarang::create([
+                'id' => $data['id'] ?? null,
                 'no_terima' => $data['no_terima'],
                 'supplier_id' => $data['supplier_id'],
                 'user_id' => auth()->id(),
@@ -50,6 +51,7 @@ class PenerimaanBarangService
             // 2. Create Details and Update Stock
             foreach ($data['items'] as $item) {
                 DetailPenerimaan::create([
+                    'id' => $item['id'] ?? null,
                     'penerimaan_barang_id' => $penerimaan->id,
                     'barang_id' => $item['barang_id'],
                     'jumlah' => $item['jumlah'],

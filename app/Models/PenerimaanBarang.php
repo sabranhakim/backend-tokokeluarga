@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +13,10 @@ use Spatie\Activitylog\LogOptions;
 
 class PenerimaanBarang extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, HasUuids;
 
     protected $fillable = [
+        'id',
         'no_terima',
         'supplier_id',
         'user_id',

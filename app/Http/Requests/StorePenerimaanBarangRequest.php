@@ -22,11 +22,13 @@ class StorePenerimaanBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => 'nullable|uuid|unique:penerimaan_barangs,id',
             'no_terima' => 'required|string|unique:penerimaan_barangs,no_terima',
             'supplier_id' => 'required|exists:suppliers,id',
             'tgl_terima' => 'required|date',
             'foto_bon' => 'nullable|image|max:5120|mimes:jpg,png,jpeg', // Max 5MB
             'items' => 'required|array|min:1',
+            'items.*.id' => 'nullable|uuid|unique:detail_penerimaans,id',
             'items.*.barang_id' => 'required|exists:barangs,id',
             'items.*.jumlah' => 'required|integer|min:1',
         ];
