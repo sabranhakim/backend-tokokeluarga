@@ -4,9 +4,17 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\PenerimaanBarang;
+use App\Services\PenerimaanBarangService;
 
 class PenerimaanBarangController extends Controller
 {
+    protected $penerimaanService;
+
+    public function __construct(PenerimaanBarangService $penerimaanService)
+    {
+        $this->penerimaanService = $penerimaanService;
+    }
+
     public function index()
     {
         return view('penerimaan.index');
@@ -29,10 +37,15 @@ class PenerimaanBarangController extends Controller
 
     public function verify(PenerimaanBarang $penerimaanBarang)
     {
-        $penerimaanBarang->update(['status_verifikasi' => 'verified']);
+        try {
+            $this->penerimaanService->verify($penerimaanBarang->id);
 
-        return redirect()->back()
-            ->with('success', 'Penerimaan barang berhasil diverifikasi.');
+            return redirect()->back()
+                ->with('success', 'Penerimaan barang berhasil diverifikasi dan stok telah diperbarui.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Gagal memverifikasi: ' . $e->getMessage());
+        }
     }
 
     public function destroy(PenerimaanBarang $penerimaanBarang)

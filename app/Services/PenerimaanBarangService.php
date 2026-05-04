@@ -48,7 +48,7 @@ class PenerimaanBarangService
                 'status_verifikasi' => 'pending', // Default is pending
             ]);
 
-            // 2. Create Details and Update Stock
+            // 2. Create Details (Stock is NOT updated yet, waiting for verification)
             foreach ($data['items'] as $item) {
                 DetailPenerimaan::create([
                     'id' => $item['id'] ?? null,
@@ -56,10 +56,6 @@ class PenerimaanBarangService
                     'barang_id' => $item['barang_id'],
                     'jumlah' => $item['jumlah'],
                 ]);
-
-                // Update stock in Barang table with lock for update
-                $barang = Barang::where('id', $item['barang_id'])->lockForUpdate()->firstOrFail();
-                $barang->increment('stok', $item['jumlah']);
             }
 
             // After all details are saved, reload relationships for the notification
@@ -115,6 +111,36 @@ class PenerimaanBarangService
             $supplier->no_telp,
             $message
         )->delay(now()->addSeconds(1));
+    }
+
+    /**
+     * Verify a penerimaan barang and update stock.
+     *
+     * @param string $id
+     * @return \App\Models\PenerimaanBarang
+     */
+    public function verify(string $id)
+    {
+        return DB::transaction(function () use ($id) {
+            $penerimaan = PenerimaanBarang::with('detailPenerimaans')->findOrFail($id);
+
+            if ($penerimaan->status_verifikasi === 'verified') {
+                throw new \Exception('Penerimaan barang sudah diverifikasi sebelumnya.');
+            }
+
+            // 1. Update status
+            $penerimaan->update([
+                'status_verifikasi' => 'verified'
+            ]);
+
+            // 2. Update stock for each item
+            foreach ($penerimaan->detailPenerimaans as $detail) {
+                $barang = Barang::where('id', $detail->barang_id)->lockForUpdate()->firstOrFail();
+                $barang->increment('stok', $detail->jumlah);
+            }
+
+            return $penerimaan;
+        });
     }
 
     /**
