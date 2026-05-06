@@ -2,10 +2,30 @@
 
 namespace App\Http\Requests;
 
+use App\Models\PenerimaanBarang;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StorePenerimaanBarangRequest extends FormRequest
 {
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('id')) {
+            $existing = PenerimaanBarang::with(['supplier', 'user', 'detailPenerimaans.barang'])
+                ->find($this->input('id'));
+            
+            if ($existing) {
+                throw new HttpResponseException(response()->json([
+                    'success' => true,
+                    'message' => 'Penerimaan Barang Berhasil Disimpan',
+                    'data' => $existing
+                ], 200));
+            }
+        }
+    }
     /**
      * Determine if the user is authorized to make this request.
      */
