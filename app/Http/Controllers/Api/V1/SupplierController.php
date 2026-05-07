@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
@@ -19,7 +18,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List Data Supplier',
-            'data' => $suppliers
+            'data' => $suppliers,
         ]);
     }
 
@@ -34,12 +33,12 @@ class SupplierController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Detail Data Supplier',
-                'data' => $supplier
+                'data' => $supplier,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data tidak ditemukan',
             ], 404);
         }
     }

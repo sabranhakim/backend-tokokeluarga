@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePenerimaanBarangRequest;
 use App\Services\PenerimaanBarangService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class PenerimaanBarangController extends Controller
 {
@@ -27,7 +26,7 @@ class PenerimaanBarangController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List Data Penerimaan Barang',
-            'data' => $penerimaans
+            'data' => $penerimaans,
         ]);
     }
 
@@ -45,12 +44,12 @@ class PenerimaanBarangController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Penerimaan Barang Berhasil Disimpan',
-                'data' => $penerimaan
+                'data' => $penerimaan,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -66,12 +65,12 @@ class PenerimaanBarangController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Detail Penerimaan Barang',
-                'data' => $penerimaan
+                'data' => $penerimaan,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data tidak ditemukan',
             ], 404);
         }
     }

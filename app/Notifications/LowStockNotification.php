@@ -4,8 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Barang;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class LowStockNotification extends Notification
@@ -46,7 +44,7 @@ class LowStockNotification extends Notification
             'stok' => $this->barang->stok,
             'stok_minimal' => $this->barang->stok_minimal,
             'message' => "Stok barang {$this->barang->nama_barang} ({$this->barang->kode_barang}) menipis! Sisa: {$this->barang->stok}",
-            'type' => 'low_stock'
+            'type' => 'low_stock',
         ];
     }
 }

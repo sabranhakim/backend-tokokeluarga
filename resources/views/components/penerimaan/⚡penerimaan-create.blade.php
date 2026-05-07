@@ -166,53 +166,58 @@ new class extends Component {
                             </div>
                             @error('supplier_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                         </div>
+                    </div>
+                </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Foto Bon (Opsional)</label>
-                            
-                            <div 
-                                x-data="{ isUploading: false, progress: 0 }"
-                                x-on:livewire-upload-start="isUploading = true"
-                                x-on:livewire-upload-finish="isUploading = false"
-                                x-on:livewire-upload-error="isUploading = false"
-                                x-on:livewire-upload-progress="progress = $event.detail.progress"
-                            >
-                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-blue-400 transition-colors cursor-pointer relative bg-white">
-                                    <input type="file" wire:model="foto_bon" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                    <div class="space-y-1 text-center">
-                                        <svg class="mx-auto h-10 w-10 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                        <div class="flex text-sm text-slate-600">
-                                            <span class="relative cursor-pointer bg-white rounded-md font-bold text-blue-600 hover:text-blue-500">Upload file</span>
-                                        </div>
-                                        <p class="text-xs text-slate-500">PNG, JPG up to 5MB</p>
+                <!-- Dokumen Bon Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Dokumentasi</h3>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Foto Bon (Opsional)</label>
+                        
+                        <div 
+                            x-data="{ isUploading: false, progress: 0 }"
+                            x-on:livewire-upload-start="isUploading = true"
+                            x-on:livewire-upload-finish="isUploading = false"
+                            x-on:livewire-upload-error="isUploading = false"
+                            x-on:livewire-upload-progress="progress = $event.detail.progress"
+                        >
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-blue-400 transition-colors cursor-pointer relative bg-white">
+                                <input type="file" wire:model="foto_bon" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                <div class="space-y-1 text-center">
+                                    <svg class="mx-auto h-10 w-10 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <div class="flex text-sm text-slate-600">
+                                        <span class="relative cursor-pointer bg-white rounded-md font-bold text-blue-600 hover:text-blue-500">Upload file</span>
                                     </div>
-                                </div>
-
-                                <!-- Progress Bar -->
-                                <div x-show="isUploading" class="mt-3">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sedang Mengunggah...</span>
-                                        <span class="text-[10px] font-black text-blue-600" x-text="progress + '%'"></span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-50">
-                                        <div class="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out" :style="'width: ' + progress + '%'"></div>
-                                    </div>
+                                    <p class="text-xs text-slate-500">PNG, JPG up to 5MB</p>
                                 </div>
                             </div>
 
-                            @if ($foto_bon)
-                                <div class="mt-4 relative inline-block group">
-                                    <div class="absolute inset-0 bg-slate-900/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <img src="{{ $foto_bon->temporaryUrl() }}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-100">
-                                    <button type="button" wire:click="$set('foto_bon', null)" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg hover:bg-rose-600 transition-colors">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
+                            <!-- Progress Bar -->
+                            <div x-show="isUploading" class="mt-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sedang Mengunggah...</span>
+                                    <span class="text-[10px] font-black text-blue-600" x-text="progress + '%'"></span>
                                 </div>
-                            @endif
-                            @error('foto_bon') <span class="text-red-500 text-xs font-medium mt-1 block">{{ $message }}</span> @enderror
+                                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-50">
+                                    <div class="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out" :style="'width: ' + progress + '%'"></div>
+                                </div>
+                            </div>
                         </div>
+
+                        @if ($foto_bon)
+                            <div class="mt-4 relative inline-block group">
+                                <div class="absolute inset-0 bg-slate-900/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <img src="{{ $foto_bon->temporaryUrl() }}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-100">
+                                <button type="button" wire:click="$set('foto_bon', null)" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg hover:bg-rose-600 transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        @endif
+                        @error('foto_bon') <span class="text-red-500 text-xs font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
                 </div>
             </div>
@@ -289,7 +294,7 @@ new class extends Component {
                             </span>
 
                             <span wire:loading wire:target="save" class="flex items-center">
-                                <svg class="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg class="animate-spin h-5 w-5 mr-3 text-white flex justify-center" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>

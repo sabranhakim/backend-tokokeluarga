@@ -8,7 +8,7 @@ use App\Models\PenerimaanBarang;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\DetailPenerimaan>
+ * @extends Factory<DetailPenerimaan>
  */
 class DetailPenerimaanFactory extends Factory
 {

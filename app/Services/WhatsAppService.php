@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppService
 {
     protected string $token;
+
     protected string $baseUrl;
 
     public function __construct()
@@ -27,21 +28,24 @@ class WhatsAppService
             $response = Http::withHeaders([
                 'Authorization' => $this->token,
             ])->asForm()->post($this->baseUrl, [
-                'target'  => $target,
+                'target' => $target,
                 'message' => $message,
-                'delay'   => 1,
+                'delay' => 1,
             ]);
 
             if ($response->successful()) {
                 Log::info("WA Terkirim ke {$target}");
+
                 return true;
             }
 
-            Log::error("Gagal kirim WA ke {$target}: " . $response->body());
+            Log::error("Gagal kirim WA ke {$target}: ".$response->body());
+
             return false;
 
         } catch (\Exception $e) {
-            Log::error("Error WhatsAppService: " . $e->getMessage());
+            Log::error('Error WhatsAppService: '.$e->getMessage());
+
             return false;
         }
     }

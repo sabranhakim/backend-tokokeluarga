@@ -27,7 +27,7 @@ class BarangController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List Data Barang',
-            'data' => $barangs
+            'data' => $barangs,
         ]);
     }
 
@@ -42,12 +42,12 @@ class BarangController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Detail Data Barang',
-                'data' => $barang
+                'data' => $barang,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data tidak ditemukan',
             ], 404);
         }
     }

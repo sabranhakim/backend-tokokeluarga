@@ -4,8 +4,6 @@ namespace App\Notifications;
 
 use App\Models\PenerimaanBarang;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class NewPenerimaanNotification extends Notification
@@ -45,7 +43,7 @@ class NewPenerimaanNotification extends Notification
             'supplier_nama' => $this->penerimaan->supplier->nama_supplier,
             'petugas_nama' => $this->penerimaan->user->name,
             'message' => "Penerimaan barang baru #{$this->penerimaan->no_terima} dari {$this->penerimaan->supplier->nama_supplier} telah masuk.",
-            'type' => 'new_penerimaan'
+            'type' => 'new_penerimaan',
         ];
     }
 }

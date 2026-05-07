@@ -2,18 +2,20 @@
 
 namespace App\Services;
 
+use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Barang;
 use App\Models\DetailPenerimaan;
 use App\Models\PenerimaanBarang;
 use App\Models\User;
 use App\Notifications\NewPenerimaanNotification;
-use App\Jobs\SendWhatsAppNotificationJob;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class PenerimaanBarangService
 {
     protected $cloudinaryService;
+
     protected $whatsappService;
 
     public function __construct(CloudinaryService $cloudinaryService, WhatsAppService $whatsappService)
@@ -25,9 +27,8 @@ class PenerimaanBarangService
     /**
      * Store a new penerimaan barang along with its details.
      *
-     * @param array $data
-     * @param mixed $file
-     * @return \App\Models\PenerimaanBarang
+     * @param  mixed  $file
+     * @return PenerimaanBarang
      */
     public function store(array $data, $file = null)
     {
@@ -82,29 +83,29 @@ class PenerimaanBarangService
     {
         $supplier = $penerimaan->supplier;
 
-        if (!$supplier || !$supplier->no_telp) {
+        if (! $supplier || ! $supplier->no_telp) {
             return;
         }
 
-        $itemsList = "";
+        $itemsList = '';
         foreach ($penerimaan->detailPenerimaans as $detail) {
             $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
             $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
         }
 
-        $message = "📦 *PENERIMAAN BARANG BERHASIL*\n\n" .
-                   "Halo *{$supplier->nama_supplier}*,\n" .
-                   "Barang kiriman Anda telah kami terima di gudang.\n\n" .
-                   "Detail:\n" .
-                   "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
-                   "📅 Tanggal: " . $penerimaan->tgl_terima->format('d-m-Y') . "\n\n" .
-                   "Penerima: *{$penerimaan->user->name}*\n\n" .
-                   "Daftar Barang:\n" .
-                   $itemsList . "\n" .
-                   "_Catatan: Foto bukti fisik telah diarsipkan secara digital di sistem kami._\n\n" .
-                   "Terima kasih telah menjadi supplier kami.\n" .
-                   "---------------------------\n" .
-                   "_Pesan Otomatis Grosir Toko Keluarga_";
+        $message = "📦 *PENERIMAAN BARANG BERHASIL*\n\n".
+                   "Halo *{$supplier->nama_supplier}*,\n".
+                   "Barang kiriman Anda telah kami terima di gudang.\n\n".
+                   "Detail:\n".
+                   "📄 No. Terima: *{$penerimaan->no_terima}*\n".
+                   '📅 Tanggal: '.$penerimaan->tgl_terima->format('d-m-Y')."\n\n".
+                   "Penerima: *{$penerimaan->user->name}*\n\n".
+                   "Daftar Barang:\n".
+                   $itemsList."\n".
+                   "_Catatan: Foto bukti fisik telah diarsipkan secara digital di sistem kami._\n\n".
+                   "Terima kasih telah menjadi supplier kami.\n".
+                   "---------------------------\n".
+                   '_Pesan Otomatis Grosir Toko Keluarga_';
 
         // Dispatch Job (dikirim segera setelah transaksi selesai)
         SendWhatsAppNotificationJob::dispatch(
@@ -116,8 +117,7 @@ class PenerimaanBarangService
     /**
      * Verify a penerimaan barang and update stock.
      *
-     * @param string $id
-     * @return \App\Models\PenerimaanBarang
+     * @return PenerimaanBarang
      */
     public function verify(string $id)
     {
@@ -130,7 +130,7 @@ class PenerimaanBarangService
 
             // 1. Update status
             $penerimaan->update([
-                'status_verifikasi' => 'verified'
+                'status_verifikasi' => 'verified',
             ]);
 
             // 2. Update stock for each item
@@ -148,7 +148,7 @@ class PenerimaanBarangService
                         'new_stok' => $barang->stok,
                         'jumlah_masuk' => $detail->jumlah,
                         'no_terima' => $penerimaan->no_terima,
-                        'tipe' => 'masuk'
+                        'tipe' => 'masuk',
                     ])
                     ->log("Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} melalui verifikasi penerimaan {$penerimaan->no_terima}");
             }
@@ -160,7 +160,7 @@ class PenerimaanBarangService
     /**
      * Get all penerimaan barang with relationships.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getAll()
     {
@@ -170,8 +170,8 @@ class PenerimaanBarangService
     /**
      * Get a single penerimaan barang with relationships.
      *
-     * @param int $id
-     * @return \App\Models\PenerimaanBarang
+     * @param  int  $id
+     * @return PenerimaanBarang
      */
     public function getById($id)
     {

@@ -44,7 +44,7 @@ class PenerimaanBarangController extends Controller
                 ->with('success', 'Penerimaan barang berhasil diverifikasi dan stok telah diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Gagal memverifikasi: ' . $e->getMessage());
+                ->with('error', 'Gagal memverifikasi: '.$e->getMessage());
         }
     }
 

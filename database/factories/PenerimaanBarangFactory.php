@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\PenerimaanBarang>
+ * @extends Factory<PenerimaanBarang>
  */
 class PenerimaanBarangFactory extends Factory
 {
@@ -22,7 +22,7 @@ class PenerimaanBarangFactory extends Factory
     public function definition(): array
     {
         return [
-            'no_terima' => 'TRM-' . $this->faker->unique()->numberBetween(100000, 999999),
+            'no_terima' => 'TRM-'.$this->faker->unique()->numberBetween(100000, 999999),
             'supplier_id' => Supplier::factory(),
             'user_id' => User::factory(),
             'tgl_terima' => $this->faker->dateTimeBetween('-1 year', 'now'),

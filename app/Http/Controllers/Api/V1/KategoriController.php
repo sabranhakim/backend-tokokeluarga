@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Kategori;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class KategoriController extends Controller
 {
@@ -19,7 +18,7 @@ class KategoriController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List Data Kategori',
-            'data' => $kategoris
+            'data' => $kategoris,
         ]);
     }
 
@@ -34,12 +33,12 @@ class KategoriController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Detail Data Kategori',
-                'data' => $kategori
+                'data' => $kategori,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data tidak ditemukan',
             ], 404);
         }
     }

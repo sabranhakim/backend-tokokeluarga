@@ -6,7 +6,7 @@ use App\Models\Kategori;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Kategori>
+ * @extends Factory<Kategori>
  */
 class KategoriFactory extends Factory
 {
@@ -30,7 +30,7 @@ class KategoriFactory extends Factory
                 'Sembako',
                 'Susu & Keju',
                 'Cokelat & Selai',
-                'Tepung & Gandum'
+                'Tepung & Gandum',
             ]),
         ];
     }
