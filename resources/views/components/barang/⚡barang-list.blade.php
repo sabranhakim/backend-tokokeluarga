@@ -198,7 +198,7 @@ new class extends Component {
                     @forelse($barangs as $barang)
                     <tr class="hover:bg-slate-50 transition-colors {{ !$barang->is_active ? 'bg-slate-50/50' : '' }}">
                         <td class="px-6 py-4">
-                            <button wire:click="toggleActive({{ $barang->id }})" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $barang->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                            <button wire:click="toggleActive('{{ $barang->id }}')" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $barang->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
                                 <span class="sr-only">Toggle Active</span>
                                 <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $barang->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
                             </button>
@@ -233,10 +233,10 @@ new class extends Component {
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             @can('manage barang')
-                            <button wire:click="edit({{ $barang->id }})" class="text-amber-600 hover:text-amber-700 font-medium">
+                            <button wire:click="edit('{{ $barang->id }}')" class="text-amber-600 hover:text-amber-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
-                            <button wire:click="delete({{ $barang->id }})" wire:confirm="Yakin ingin menghapus barang ini?" class="text-red-600 hover:text-red-700 font-medium">
+                            <button wire:click="delete('{{ $barang->id }}')" wire:confirm="Yakin ingin menghapus barang ini?" class="text-red-600 hover:text-red-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                             @else
