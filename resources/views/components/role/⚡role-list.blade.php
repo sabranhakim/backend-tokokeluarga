@@ -28,6 +28,7 @@ new class extends Component {
     public function getGroupedPermissionsProperty()
     {
         $groups = [
+            'Akses Mobile' => ['view barang', 'view supplier', 'view kategori', 'view penerimaan', 'create penerimaan'],
             'Umum' => ['view dashboard', 'manage activity'],
             'User & Role' => ['manage users', 'manage roles'],
             'Master Barang' => ['view barang', 'manage barang', 'view kategori', 'manage kategori'],
