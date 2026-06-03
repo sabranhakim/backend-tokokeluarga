@@ -60,7 +60,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('supplier', SupplierController::class);
     Route::resource('kategori', KategoriController::class);
 
-    Route::get('/laporan', [ReportController::class, 'index'])->name('laporan.index');
+    Route::prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/export/stok', [ReportController::class, 'exportStok'])->name('export.stok');
+        Route::get('/export/kadaluarsa', [ReportController::class, 'exportKadaluarsa'])->name('export.kadaluarsa');
+        Route::get('/export/penerimaan-periode', [ReportController::class, 'exportPenerimaanPeriode'])->name('export.penerimaan-periode');
+        Route::get('/export/penerimaan-supplier', [ReportController::class, 'exportPenerimaanSupplier'])->name('export.penerimaan-supplier');
+    });
 
     // Penerimaan Barang Routes
     Route::prefix('penerimaan')->name('penerimaan.')->group(function () {

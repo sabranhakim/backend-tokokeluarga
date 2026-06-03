@@ -77,7 +77,25 @@ new class extends Component {
             return;
         }
         $this->resetFields();
+        $this->generateKodeBarang();
         $this->showModal = true;
+    }
+
+    public function generateKodeBarang()
+    {
+        $lastBarang = Barang::withoutGlobalScope('active')->orderBy('created_at', 'desc')->first();
+        
+        if (!$lastBarang) {
+            $this->kode_barang = 'BRG-0001';
+            return;
+        }
+
+        // Extract number from BRG-XXXX
+        $lastCode = $lastBarang->kode_barang;
+        $number = (int) substr($lastCode, 4);
+        $newNumber = $number + 1;
+        
+        $this->kode_barang = 'BRG-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
     public function resetFields()
