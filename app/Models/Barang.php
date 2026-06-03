@@ -56,4 +56,9 @@ class Barang extends Model
     {
         return $this->hasMany(DetailPenerimaan::class);
     }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
 }

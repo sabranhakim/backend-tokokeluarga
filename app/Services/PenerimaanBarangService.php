@@ -6,6 +6,7 @@ use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Barang;
 use App\Models\DetailPenerimaan;
 use App\Models\PenerimaanBarang;
+use App\Models\StockMovement;
 use App\Models\User;
 use App\Notifications\NewPenerimaanNotification;
 use Illuminate\Database\Eloquent\Collection;
@@ -133,19 +134,33 @@ class PenerimaanBarangService
                 'status_verifikasi' => 'verified',
             ]);
 
-            // 2. Update stock for each item
+            // 2. Update stock for each item and record movement
             foreach ($penerimaan->detailPenerimaans as $detail) {
                 $barang = Barang::where('id', $detail->barang_id)->lockForUpdate()->firstOrFail();
                 $oldStok = $barang->stok;
                 $barang->increment('stok', $detail->jumlah);
+                $newStok = $barang->stok;
 
-                // Log detailed stock movement
+                // Record Stock Movement for Audit
+                StockMovement::create([
+                    'barang_id' => $barang->id,
+                    'user_id' => auth()->id(),
+                    'type' => 'in',
+                    'quantity' => $detail->jumlah,
+                    'before_quantity' => $oldStok,
+                    'after_quantity' => $newStok,
+                    'reason' => "Penerimaan Barang #{$penerimaan->no_terima}",
+                    'reference_id' => $penerimaan->id,
+                    'reference_type' => PenerimaanBarang::class,
+                ]);
+
+                // Log detailed stock movement (Activity Log)
                 activity()
                     ->performedOn($barang)
                     ->causedBy(auth()->user())
                     ->withProperties([
                         'old_stok' => $oldStok,
-                        'new_stok' => $barang->stok,
+                        'new_stok' => $newStok,
                         'jumlah_masuk' => $detail->jumlah,
                         'no_terima' => $penerimaan->no_terima,
                         'tipe' => 'masuk',

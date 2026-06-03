@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Barang;
 
 class BarangController extends Controller
 {
@@ -14,5 +15,10 @@ class BarangController extends Controller
     public function trash()
     {
         return view('barang.trash');
+    }
+
+    public function history(Barang $barang)
+    {
+        return view('barang.history', compact('barang'));
     }
 }

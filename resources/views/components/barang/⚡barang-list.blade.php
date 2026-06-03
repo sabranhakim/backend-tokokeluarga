@@ -4,8 +4,9 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Barang;
 use App\Models\Kategori;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\Gate;
-use function Laravel\Folio\name;
+use Illuminate\Support\Facades\DB;
 
 new class extends Component {
     use WithPagination;
@@ -128,16 +129,43 @@ new class extends Component {
 
         $validated = $this->validate($validationRules);
 
-        if ($this->isEdit) {
-            Barang::withoutGlobalScope('active')->find($this->barangId)->update($validated);
-            $message = 'Barang berhasil diperbarui';
-        } else {
-            Barang::create($validated);
-            $message = 'Barang berhasil ditambahkan';
-        }
+        DB::transaction(function () use ($validated) {
+            if ($this->isEdit) {
+                $barang = Barang::withoutGlobalScope('active')->find($this->barangId);
+                $oldStok = $barang->stok;
+                $barang->update($validated);
+                
+                if ($oldStok != $validated['stok']) {
+                    StockMovement::create([
+                        'barang_id' => $barang->id,
+                        'user_id' => auth()->id(),
+                        'type' => 'adjustment',
+                        'quantity' => $validated['stok'] - $oldStok,
+                        'before_quantity' => $oldStok,
+                        'after_quantity' => $validated['stok'],
+                        'reason' => 'Koreksi Stok Manual (Edit Barang)',
+                    ]);
+                }
+                $this->dispatch('notify', 'Barang berhasil diperbarui');
+            } else {
+                $barang = Barang::create($validated);
+                
+                if ($barang->stok > 0) {
+                    StockMovement::create([
+                        'barang_id' => $barang->id,
+                        'user_id' => auth()->id(),
+                        'type' => 'in',
+                        'quantity' => $barang->stok,
+                        'before_quantity' => 0,
+                        'after_quantity' => $barang->stok,
+                        'reason' => 'Saldo Awal (Inisialisasi)',
+                    ]);
+                }
+                $this->dispatch('notify', 'Barang berhasil ditambahkan');
+            }
+        });
 
         $this->showModal = false;
-        $this->dispatch('notify', $message);
     }
 
     public function delete($id)
@@ -232,6 +260,9 @@ new class extends Component {
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
+                            <a href="{{ route('barang.history', $barang->id) }}" class="text-blue-600 hover:text-blue-700 font-medium" title="Riwayat Stok">
+                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </a>
                             @can('manage barang')
                             <button wire:click="edit('{{ $barang->id }}')" class="text-amber-600 hover:text-amber-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>

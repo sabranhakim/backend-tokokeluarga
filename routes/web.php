@@ -52,6 +52,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // Resource Routes
+    Route::get('/barang/history', function () {
+        return view('barang.history-all');
+    })->name('barang.history-all');
+    Route::get('/barang/{barang}/history', [BarangController::class, 'history'])->name('barang.history');
     Route::resource('barang', BarangController::class);
     Route::resource('supplier', SupplierController::class);
     Route::resource('kategori', KategoriController::class);
