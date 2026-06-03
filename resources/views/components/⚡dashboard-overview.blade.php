@@ -20,6 +20,12 @@ new class extends Component
             'stokKritis' => Barang::whereColumn('stok', '<=', 'stok_minimal')->orderBy('stok', 'asc')->take(5)->get(),
             'aktivitasTerbaru' => Activity::with('causer')->latest()->take(5)->get(),
             'unreadNotifications' => Auth::user()->unreadNotifications->count(),
+            'supplierAktif' => Supplier::withCount(['penerimaanBarangs' => function($query) {
+                    $query->where('status_verifikasi', 'verified');
+                }])
+                ->orderBy('penerimaan_barangs_count', 'desc')
+                ->take(5)
+                ->get(),
         ];
     }
 
@@ -92,7 +98,7 @@ new class extends Component
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Stok Kritis Table -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
@@ -122,6 +128,40 @@ new class extends Component
                 @empty
                 <div class="px-6 py-10 text-center">
                     <p class="text-slate-400 italic text-sm">Semua stok dalam kondisi aman.</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- Supplier Paling Aktif -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    Supplier Teraktif
+                </h3>
+                <a href="{{ route('supplier.index') }}" class="text-xs font-bold text-blue-600 hover:text-blue-800">Lihat Supplier</a>
+            </div>
+            <div class="divide-y divide-slate-50">
+                @forelse($supplierAktif as $supplier)
+                <div class="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mr-3">
+                            {{ substr($supplier->nama_supplier, 0, 1) }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">{{ $supplier->nama_supplier }}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">{{ $supplier->no_telp ?? 'No Telp -' }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-black text-slate-800">{{ $supplier->penerimaan_barangs_count }}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Transaksi</p>
+                    </div>
+                </div>
+                @empty
+                <div class="px-6 py-10 text-center">
+                    <p class="text-slate-400 italic text-sm">Belum ada data transaksi.</p>
                 </div>
                 @endforelse
             </div>

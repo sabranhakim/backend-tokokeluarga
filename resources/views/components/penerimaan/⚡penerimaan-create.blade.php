@@ -26,8 +26,12 @@ new class extends Component {
         'tgl_terima' => 'required|date',
         'foto_bon' => 'nullable|image|max:5120',
         'items' => 'required|array|min:1',
-        'items.*.barang_id' => 'required|exists:barangs,id',
+        'items.*.barang_id' => 'required|exists:barangs,id|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
+    ];
+
+    protected $messages = [
+        'items.*.barang_id.distinct' => 'Barang yang sama tidak boleh ditambahkan lebih dari satu kali dalam satu transaksi.',
     ];
 
     public function mount()

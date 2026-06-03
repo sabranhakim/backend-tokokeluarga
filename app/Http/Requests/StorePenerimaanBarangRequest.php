@@ -51,8 +51,20 @@ class StorePenerimaanBarangRequest extends FormRequest
             'foto_bon' => 'nullable|image|max:5120|mimes:jpg,png,jpeg', // Max 5MB
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|uuid|unique:detail_penerimaans,id',
-            'items.*.barang_id' => 'required|exists:barangs,id',
+            'items.*.barang_id' => 'required|exists:barangs,id|distinct',
             'items.*.jumlah' => 'required|integer|min:1',
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.*.barang_id.distinct' => 'Barang yang sama tidak boleh ditambahkan lebih dari satu kali dalam satu transaksi.',
         ];
     }
 }
