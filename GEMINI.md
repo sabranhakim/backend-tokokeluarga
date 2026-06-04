@@ -53,6 +53,25 @@ The project follows a standard Laravel directory structure with some specific pa
   php artisan pint
   ```
 
+### Permissions & Web Server Setup
+If you are running the project using a web server like Nginx (with PHP-FPM) or Apache, you must ensure the `storage` and `bootstrap/cache` directories are writable by the web server user (usually `www-data`).
+
+Run these commands to fix "Permission denied" errors (e.g., during Excel export or logging):
+```bash
+# 1. Set ownership to current user and web server group
+sudo chown -R $USER:www-data storage bootstrap/cache
+
+# 2. Grant write permissions to group
+sudo chmod -R 775 storage bootstrap/cache
+
+# 3. Ensure new files inherit group permissions (SetGID)
+sudo chmod -R g+s storage bootstrap/cache
+
+# 4. Add yourself to the www-data group to avoid future conflicts
+sudo usermod -a -G www-data $USER
+```
+*Note: You may need to log out and log back in for the group change to take effect.*
+
 ## Development Conventions
 - **Code Style:** Follow PSR-12 and Laravel's coding standards. Use `php artisan pint` to automatically format code.
 - **Surgical Updates:** When modifying existing logic, ensure that both Web and API controllers are considered if the change affects shared business logic.
