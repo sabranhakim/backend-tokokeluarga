@@ -14,7 +14,7 @@ new class extends Component {
 
     public function with()
     {
-        $barang = Barang::withoutGlobalScope('active')->with('kategori')->findOrFail($this->barangId);
+        $barang = Barang::withoutGlobalScope('active')->with(['kategori', 'supplier'])->findOrFail($this->barangId);
         
         $recentMovements = StockMovement::where('barang_id', $this->barangId)
             ->with('user')
@@ -64,6 +64,13 @@ new class extends Component {
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase">Kategori</p>
                         <p class="text-lg font-medium text-slate-800">{{ $barang->kategori->nama_kategori ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase">Supplier Utama</p>
+                        <p class="text-lg font-medium text-slate-800">{{ $barang->supplier->nama_supplier ?? 'Belum ditentukan' }}</p>
+                        @if($barang->supplier && $barang->supplier->no_telp)
+                             <p class="text-xs text-slate-500">{{ $barang->supplier->no_telp }}</p>
+                        @endif
                     </div>
                     <div class="md:col-span-2">
                         <p class="text-xs font-bold text-slate-400 uppercase">Nama Barang</p>

@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Barang;
 use App\Models\Kategori;
+use App\Models\Supplier;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -17,12 +18,13 @@ new class extends Component {
 
     // Form fields
     public $barangId;
-    public $kode_barang, $nama_barang, $kategori_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10, $tgl_kadaluarsa;
+    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10, $tgl_kadaluarsa;
 
     protected $rules = [
         'kode_barang' => 'required|unique:barangs,kode_barang',
         'nama_barang' => 'required',
         'kategori_id' => 'required|exists:kategoris,id',
+        'supplier_id' => 'nullable|exists:suppliers,id',
         'satuan' => 'required',
         'harga_beli' => 'required|numeric|min:0',
         'harga_jual' => 'required|numeric|min:0',
@@ -43,7 +45,7 @@ new class extends Component {
     public function with()
     {
         return [
-            'barangs' => Barang::withoutGlobalScope('active')->with('kategori')
+            'barangs' => Barang::withoutGlobalScope('active')->with(['kategori', 'supplier'])
                 ->where(function($query) {
                     $query->where('nama_barang', 'like', '%' . $this->search . '%')
                         ->orWhere('kode_barang', 'like', '%' . $this->search . '%');
@@ -51,6 +53,7 @@ new class extends Component {
                 ->latest()
                 ->paginate(10),
             'kategoris' => Kategori::all(),
+            'suppliers' => Supplier::orderBy('nama_supplier')->get(),
         ];
     }
 
@@ -104,6 +107,7 @@ new class extends Component {
         $this->kode_barang = '';
         $this->nama_barang = '';
         $this->kategori_id = '';
+        $this->supplier_id = '';
         $this->satuan = '';
         $this->harga_beli = 0;
         $this->harga_jual = 0;
@@ -124,6 +128,7 @@ new class extends Component {
         $this->kode_barang = $barang->kode_barang;
         $this->nama_barang = $barang->nama_barang;
         $this->kategori_id = $barang->kategori_id;
+        $this->supplier_id = $barang->supplier_id;
         $this->satuan = $barang->satuan;
         $this->harga_beli = $barang->harga_beli;
         $this->harga_jual = $barang->harga_jual;
@@ -234,6 +239,8 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kode</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Barang</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok / Min</th>
@@ -259,7 +266,14 @@ new class extends Component {
                         <td class="px-6 py-4">
                             <span class="text-sm text-slate-600">{{ $barang->kategori->nama_kategori ?? '-' }}</span>
                         </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-slate-600">{{ $barang->kategori->nama_kategori ?? '-' }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-slate-600">{{ $barang->supplier->nama_supplier ?? '-' }}</span>
+                        </td>
                         <td class="px-6 py-4 text-sm text-right text-slate-600 font-mono">
+
                             Rp {{ number_format($barang->harga_beli, 0, ',', '.') }}
                         </td>
                         <td class="px-6 py-4 text-sm text-right text-slate-900 font-bold font-mono">
@@ -365,6 +379,18 @@ new class extends Component {
                             @endforeach
                         </select>
                         @error('kategori_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Supplier -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-bold text-slate-700">Supplier Utama</label>
+                        <select wire:model="supplier_id" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('supplier_id') border-red-500 @enderror">
+                            <option value="">Pilih Supplier</option>
+                            @foreach($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                            @endforeach
+                        </select>
+                        @error('supplier_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Nama Barang -->

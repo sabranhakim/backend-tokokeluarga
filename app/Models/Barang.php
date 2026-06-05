@@ -20,6 +20,7 @@ class Barang extends Model
         'kode_barang',
         'nama_barang',
         'kategori_id',
+        'supplier_id',
         'satuan',
         'harga_beli',
         'harga_jual',
@@ -50,6 +51,11 @@ class Barang extends Model
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(Kategori::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function detailPenerimaans(): HasMany

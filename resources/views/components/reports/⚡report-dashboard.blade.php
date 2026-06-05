@@ -39,7 +39,7 @@ new class extends Component {
 
     public function getLowStockDataProperty()
     {
-        return Barang::with('kategori')
+        return Barang::with(['kategori', 'supplier'])
             ->whereColumn('stok', '<=', 'stok_minimal')
             ->orderBy('stok', 'asc')
             ->get();
@@ -194,7 +194,7 @@ new class extends Component {
                     </a>
                 @endif
             @endif
-            
+
         </div>
     </div>
 
@@ -206,9 +206,10 @@ new class extends Component {
                     <tr>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Barang</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Kategori</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Supplier</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Stok Saat Ini</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Batas Minimal</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -219,16 +220,39 @@ new class extends Component {
                                 <div class="text-xs text-slate-400 font-mono">{{ $item->kode_barang }}</div>
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-600">{{ $item->kategori->nama_kategori ?? '-' }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">
+                                @if($item->supplier)
+                                    <div class="font-medium text-slate-800">{{ $item->supplier->nama_supplier }}</div>
+                                    <div class="text-[10px] text-slate-400 font-bold uppercase">{{ $item->supplier->no_telp ?? '-' }}</div>
+                                @else
+                                    <span class="text-slate-400 italic">Belum ditentukan</span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
                                     {{ $item->stok }} {{ $item->satuan }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-center text-slate-500 font-bold">{{ $item->stok_minimal }}</td>
-                            <td class="px-6 py-4 text-xs font-bold text-red-500 uppercase tracking-tighter italic">Segera Re-stock</td>
+                            <td class="px-6 py-4 text-center">
+                                @if($item->supplier && $item->supplier->no_telp)
+                                    @php
+                                        $phone = $item->supplier->no_telp;
+                                        if (str_starts_with($phone, '0')) {
+                                            $phone = '62' . substr($phone, 1);
+                                        }
+                                        $message = "Halo " . $item->supplier->nama_supplier . ", saya " . auth()->user()->name . " dari Grosir Toko Keluarga. Ingin menginfokan bahwa stok *" . $item->nama_barang . "* kami saat ini menipis (sisa *" . $item->stok . " " . $item->satuan . "*). Mohon info untuk pengiriman kembali. Terima kasih.";
+                                        $waUrl = "https://wa.me/" . $phone . "?text=" . urlencode($message);
+                                    @endphp
+                                    <a href="{{ $waUrl }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-200 transition-all border border-emerald-200">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.319 1.592 5.548 0 10.058-4.51 10.06-10.059.002-2.689-1.047-5.215-2.951-7.121-1.905-1.904-4.432-2.951-7.125-2.952-5.548 0-10.06 4.511-10.062 10.06-.001 2.12.549 4.156 1.596 5.945l-.998 3.646 3.161-.83zm10.742-7.135c-.131-.218-.48-.349-.99-.611-.508-.262-3.011-1.486-3.478-1.661-.467-.175-.808-.262-1.149.262-.34.524-1.315 1.661-1.611 2-.297.34-.593.383-1.102.12-.51-.262-2.15-.792-4.1-2.62-1.517-1.353-2.54-3.024-2.837-3.548-.297-.524-.031-.808.23-1.068.234-.233.51-.59.765-.886.256-.296.34-.508.51-.848.17-.339.085-.634-.042-.896-.128-.262-1.149-2.766-1.574-3.792-.413-1.002-.835-.866-1.149-.882-.296-.016-.638-.016-.978-.016s-.893.128-1.36.611c-.468.481-1.786 1.748-1.786 4.26s1.83 4.956 2.085 5.285c.255.33 3.6 5.501 8.72 7.71 1.218.525 2.17.84 2.91 1.075 1.226.39 2.342.335 3.224.203.984-.148 3.012-1.23 3.436-2.417.425-1.188.425-2.203.297-2.416z"/></svg>
+                                        WhatsApp
+                                    </a>
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 italic">Semua stok dalam kondisi aman.</td></tr>
+                        <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">Semua stok dalam kondisi aman.</td></tr>
                     @endforelse
                 </tbody>
             </table>

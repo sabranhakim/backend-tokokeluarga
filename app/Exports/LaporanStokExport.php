@@ -17,7 +17,7 @@ class LaporanStokExport implements FromCollection, WithHeadings, WithMapping, Sh
     */
     public function collection()
     {
-        return Barang::with('kategori')
+        return Barang::with(['kategori', 'supplier'])
             ->whereColumn('stok', '<=', 'stok_minimal')
             ->orderBy('stok', 'asc')
             ->get();
@@ -29,6 +29,7 @@ class LaporanStokExport implements FromCollection, WithHeadings, WithMapping, Sh
             'Kode Barang',
             'Nama Barang',
             'Kategori',
+            'Supplier',
             'Stok Saat Ini',
             'Satuan',
             'Batas Minimal',
@@ -42,6 +43,7 @@ class LaporanStokExport implements FromCollection, WithHeadings, WithMapping, Sh
             $barang->kode_barang,
             $barang->nama_barang,
             $barang->kategori->nama_kategori ?? '-',
+            $barang->supplier->nama_supplier ?? '-',
             $barang->stok,
             $barang->satuan,
             $barang->stok_minimal,
