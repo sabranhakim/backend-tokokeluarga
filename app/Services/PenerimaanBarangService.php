@@ -123,7 +123,7 @@ class PenerimaanBarangService
     public function verify(string $id)
     {
         return DB::transaction(function () use ($id) {
-            $penerimaan = PenerimaanBarang::with('detailPenerimaans')->findOrFail($id);
+            $penerimaan = PenerimaanBarang::with(['supplier', 'detailPenerimaans.barang'])->findOrFail($id);
 
             if ($penerimaan->status_verifikasi === 'verified') {
                 throw new \Exception('Penerimaan barang sudah diverifikasi sebelumnya.');
@@ -168,8 +168,49 @@ class PenerimaanBarangService
                     ->log("Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} melalui verifikasi penerimaan {$penerimaan->no_terima}");
             }
 
+            // After commit, send notification to supplier
+            DB::afterCommit(function () use ($penerimaan) {
+                $this->dispatchVerificationWhatsAppJob($penerimaan);
+            });
+
             return $penerimaan;
         });
+    }
+
+    /**
+     * Dispatch Verification WhatsApp Notification Job.
+     */
+    protected function dispatchVerificationWhatsAppJob(PenerimaanBarang $penerimaan): void
+    {
+        $supplier = $penerimaan->supplier;
+
+        if (! $supplier || ! $supplier->no_telp) {
+            return;
+        }
+
+        $itemsList = '';
+        foreach ($penerimaan->detailPenerimaans as $detail) {
+            $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
+            $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
+        }
+
+        $message = "✅ *VERIFIKASI PENERIMAAN BERHASIL*\n\n".
+                   "Halo *{$supplier->nama_supplier}*,\n".
+                   "Kami menginformasikan bahwa pengiriman barang Anda telah *SELESAI DIVERIFIKASI* oleh tim administrasi kami.\n\n".
+                   "Detail:\n".
+                   "📄 No. Terima: *{$penerimaan->no_terima}*\n".
+                   '📅 Tgl Verifikasi: '.now()->format('d-m-Y H:i')."\n\n".
+                   "Daftar Barang:\n".
+                   $itemsList."\n".
+                   "Status: *Telah Masuk ke Sistem Stok*\n\n".
+                   "Terima kasih atas kerja samanya.\n".
+                   "---------------------------\n".
+                   '_Pesan Otomatis Grosir Toko Keluarga_';
+
+        SendWhatsAppNotificationJob::dispatch(
+            $supplier->no_telp,
+            $message
+        );
     }
 
     /**
