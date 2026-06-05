@@ -87,7 +87,7 @@ new class extends Component {
     public function generateKodeBarang()
     {
         $lastBarang = Barang::withoutGlobalScope('active')->orderBy('created_at', 'desc')->first();
-        
+
         if (!$lastBarang) {
             $this->kode_barang = 'BRG-0001';
             return;
@@ -97,7 +97,7 @@ new class extends Component {
         $lastCode = $lastBarang->kode_barang;
         $number = (int) substr($lastCode, 4);
         $newNumber = $number + 1;
-        
+
         $this->kode_barang = 'BRG-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
@@ -157,7 +157,7 @@ new class extends Component {
                 $barang = Barang::withoutGlobalScope('active')->find($this->barangId);
                 $oldStok = $barang->stok;
                 $barang->update($validated);
-                
+
                 if ($oldStok != $validated['stok']) {
                     StockMovement::create([
                         'barang_id' => $barang->id,
@@ -172,7 +172,7 @@ new class extends Component {
                 $this->dispatch('notify', 'Barang berhasil diperbarui');
             } else {
                 $barang = Barang::create($validated);
-                
+
                 if ($barang->stok > 0) {
                     StockMovement::create([
                         'barang_id' => $barang->id,
@@ -238,8 +238,6 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kode</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Barang</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
@@ -262,12 +260,6 @@ new class extends Component {
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium {{ $barang->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $barang->nama_barang }}</div>
                             <div class="text-xs text-slate-500">{{ $barang->satuan }}</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="text-sm text-slate-600">{{ $barang->kategori->nama_kategori ?? '-' }}</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="text-sm text-slate-600">{{ $barang->kategori->nama_kategori ?? '-' }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <span class="text-sm text-slate-600">{{ $barang->supplier->nama_supplier ?? '-' }}</span>

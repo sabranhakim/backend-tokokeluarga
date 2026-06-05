@@ -93,7 +93,7 @@ new class extends Component {
     </section>
 
     <!-- Form Section (Right Side on Desktop) -->
-    <section class="flex-1 bg-surface-container-low flex items-center justify-center p-6 md:p-12 relative">
+    <section class="flex-1 bg-surface-50 flex items-center justify-center p-6 md:p-12 relative">
         <!-- Floating Login Card -->
         <div class="w-full max-w-md bg-surface-container-lowest p-10 md:p-12 rounded-[2rem] shadow-[0px_12px_32px_rgba(62,39,35,0.06)] border border-white/50 relative z-10">
             <div class="text-center mb-10">
@@ -125,7 +125,7 @@ new class extends Component {
                             <path d="M6 22q-.825 0-1.412-.587Q4 20.825 4 20V10q0-.825.588-1.413Q5.175 8 6 8h1V6q0-2.075 1.463-3.538Q9.925 1 12 1t3.538 1.462Q17 3.925 17 6v2h1q.825 0 1.413.587Q20 9.175 20 10v10q0 .825-.587 1.413Q18.825 22 18 22Zm0-2h12V10H6Zm6-3q.825 0 1.413-.587Q14 15.825 14 15q0-.825-.587-1.413Q12.825 13 12 13q-.825 0-1.412.587Q10 14.175 10 15q0 .825.588 1.413Q11.175 17 12 17ZM9 8h6V6q0-1.25-.875-2.125T12 3q-1.25 0-2.125.875T9 6ZM6 20V10v10Z"/>
                         </svg>
                         <input wire:model="password" class="w-full pl-12 pr-12 py-4 bg-surface-container-highest rounded-xl border-none focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all placeholder:text-[#3E2723]/40 text-[#3E2723]" id="password" placeholder="••••••••" type="{{ $showPassword ? 'text' : 'password' }}" required/>
-                        
+
                         <!-- Toggle Password Button -->
                         <button type="button" wire:click="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-primary transition-colors focus:outline-none">
                             @if($showPassword)
