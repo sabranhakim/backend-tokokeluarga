@@ -21,4 +21,9 @@ class BarangController extends Controller
     {
         return view('barang.history', compact('barang'));
     }
+
+    public function show(Barang $barang)
+    {
+        return view('barang.show', compact('barang'));
+    }
 }

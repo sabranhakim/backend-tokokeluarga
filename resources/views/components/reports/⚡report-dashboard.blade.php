@@ -5,6 +5,7 @@ use App\Models\Barang;
 use App\Models\PenerimaanBarang;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 new class extends Component {
     public $activeTab = 'stok_menipis';
@@ -14,6 +15,8 @@ new class extends Component {
     public $endDate;
     public $expiredInDays = 30;
     public $selectedSupplierId = '';
+    public $selectedMonth;
+    public $selectedYear;
 
     public function mount()
     {
@@ -24,6 +27,8 @@ new class extends Component {
 
         $this->startDate = now()->startOfMonth()->format('Y-m-d');
         $this->endDate = now()->endOfMonth()->format('Y-m-d');
+        $this->selectedMonth = now()->month;
+        $this->selectedYear = now()->year;
     }
 
 
@@ -73,6 +78,8 @@ new class extends Component {
 
         return PenerimaanBarang::with(['detailPenerimaans.barang'])
             ->where('supplier_id', $this->selectedSupplierId)
+            ->whereMonth('tgl_terima', $this->selectedMonth)
+            ->whereYear('tgl_terima', $this->selectedYear)
             ->latest('tgl_terima')
             ->get();
     }
@@ -145,6 +152,22 @@ new class extends Component {
                     @endforeach
                 </select>
             </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Bulan</label>
+                <select wire:model.live="selectedMonth" class="bg-slate-50 border-none rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
+                    @foreach(range(1, 12) as $m)
+                        <option value="{{ $m }}">{{ Carbon::create()->month($m)->translatedFormat('F') }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Tahun</label>
+                <select wire:model.live="selectedYear" class="bg-slate-50 border-none rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
+                    @foreach(range(now()->year, now()->year - 5) as $y)
+                        <option value="{{ $y }}">{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
         @endif
 
         <div class="ml-auto flex gap-3">
@@ -165,7 +188,7 @@ new class extends Component {
                 </a>
             @elseif($activeTab === 'penerimaan_supplier')
                 @if($selectedSupplierId)
-                    <a href="{{ route('laporan.export.penerimaan-supplier', ['supplier_id' => $selectedSupplierId]) }}" class="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-all">
+                    <a href="{{ route('laporan.export.penerimaan-supplier', ['supplier_id' => $selectedSupplierId, 'month' => $selectedMonth, 'year' => $selectedYear]) }}" class="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-all">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         Export Excel
                     </a>

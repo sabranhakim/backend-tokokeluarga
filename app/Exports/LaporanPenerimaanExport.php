@@ -16,14 +16,18 @@ class LaporanPenerimaanExport implements FromCollection, WithHeadings, WithMappi
     protected $startDate;
     protected $endDate;
     protected $supplierId;
+    protected $month;
+    protected $year;
     protected $type;
 
-    public function __construct($type, $startDate = null, $endDate = null, $supplierId = null)
+    public function __construct($type, $startDate = null, $endDate = null, $supplierId = null, $month = null, $year = null)
     {
         $this->type = $type;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->supplierId = $supplierId;
+        $this->month = $month;
+        $this->year = $year;
     }
 
     /**
@@ -37,6 +41,14 @@ class LaporanPenerimaanExport implements FromCollection, WithHeadings, WithMappi
             $query->whereBetween('tgl_terima', [$this->startDate, $this->endDate]);
         } elseif ($this->type === 'supplier') {
             $query->where('supplier_id', $this->supplierId);
+            
+            if ($this->month) {
+                $query->whereMonth('tgl_terima', $this->month);
+            }
+
+            if ($this->year) {
+                $query->whereYear('tgl_terima', $this->year);
+            }
         }
 
         return $query->latest('tgl_terima')->get();

@@ -37,6 +37,8 @@ class ReportController extends Controller
     public function exportPenerimaanSupplier(Request $request)
     {
         $supplierId = $request->query('supplier_id');
-        return Excel::download(new LaporanPenerimaanExport('supplier', null, null, $supplierId), 'laporan-penerimaan-supplier.xlsx');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        return Excel::download(new LaporanPenerimaanExport('supplier', null, null, $supplierId, $month, $year), 'laporan-penerimaan-supplier.xlsx');
     }
 }
