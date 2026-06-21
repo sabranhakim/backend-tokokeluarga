@@ -72,50 +72,10 @@ class PenerimaanBarangService
                 $users = User::all();
                 Notification::send($users, new NewPenerimaanNotification($penerimaan));
 
-                // Dispatch WhatsApp Job with delay
-                $this->dispatchWhatsAppJob($penerimaan);
             });
 
             return $penerimaan;
         });
-    }
-
-    /**
-     * Dispatch WhatsApp Notification Job.
-     */
-    protected function dispatchWhatsAppJob(PenerimaanBarang $penerimaan): void
-    {
-        $supplier = $penerimaan->supplier;
-
-        if (! $supplier || ! $supplier->no_telp) {
-            return;
-        }
-
-        $itemsList = '';
-        foreach ($penerimaan->detailPenerimaans as $detail) {
-            $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
-            $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
-        }
-
-        $message = "📦 *PENERIMAAN BARANG BERHASIL*\n\n".
-                   "Halo *{$supplier->nama_supplier}*,\n".
-                   "Barang kiriman Anda telah kami terima di gudang.\n\n".
-                   "Detail:\n".
-                   "📄 No. Terima: *{$penerimaan->no_terima}*\n".
-                   '📅 Tanggal: '.$penerimaan->tgl_terima->format('d-m-Y')."\n\n".
-                   "Penerima: *{$penerimaan->user->name}*\n\n".
-                   "Daftar Barang:\n".
-                   $itemsList."\n".
-                   "_Catatan: Foto bukti fisik telah diarsipkan secara digital di sistem kami._\n\n".
-                   "Terima kasih telah menjadi supplier kami.\n".
-                   "---------------------------\n".
-                   '_Pesan Otomatis Grosir Toko Keluarga_';
-
-        // Dispatch Job (dikirim segera setelah transaksi selesai)
-        SendWhatsAppNotificationJob::dispatch(
-            $supplier->no_telp,
-            $message
-        )->delay(now()->addSeconds(1));
     }
 
     /**
