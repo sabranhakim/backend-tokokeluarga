@@ -39,10 +39,13 @@ class PenerimaanBarangService
                 $fotoBonUrl = $this->cloudinaryService->upload($file);
             }
 
+            // Generate unique no_terima on backend/service
+            $noTerima = $this->generateNoTerima();
+
             // 1. Create PenerimaanBarang Header
             $penerimaan = PenerimaanBarang::create([
                 'id' => $data['id'] ?? null,
-                'no_terima' => $data['no_terima'],
+                'no_terima' => $noTerima,
                 'supplier_id' => $data['supplier_id'],
                 'user_id' => auth()->id(),
                 'tgl_terima' => $data['tgl_terima'],
@@ -232,5 +235,19 @@ class PenerimaanBarangService
     public function getById($id)
     {
         return PenerimaanBarang::with(['supplier', 'user', 'detailPenerimaans.barang'])->findOrFail($id);
+    }
+
+    /**
+     * Generate a unique receipt number.
+     *
+     * @return string
+     */
+    public function generateNoTerima(): string
+    {
+        do {
+            $noTerima = 'TRM-' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
+        } while (PenerimaanBarang::where('no_terima', $noTerima)->exists());
+
+        return $noTerima;
     }
 }

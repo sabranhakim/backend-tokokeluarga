@@ -21,7 +21,7 @@ new class extends Component {
     public $items = [];
 
     protected $rules = [
-        'no_terima' => 'required|unique:penerimaan_barangs,no_terima',
+        'no_terima' => 'nullable|string',
         'supplier_id' => 'required|exists:suppliers,id',
         'tgl_terima' => 'required|date',
         'foto_bon' => 'nullable|image|max:5120',
@@ -41,7 +41,7 @@ new class extends Component {
             return $this->redirect(route('dashboard'), navigate: true);
         }
         $this->tgl_terima = date('Y-m-d');
-        $this->no_terima = 'TRM-' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
+        $this->no_terima = 'Otomatis (dibuat oleh sistem)';
         $this->addItem(); // Start with one empty item
     }
 
@@ -105,7 +105,7 @@ new class extends Component {
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">No. Terima</label>
-                            <input wire:model="no_terima" type="text" placeholder="TRM-{{ date('YmdHis') }}" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('no_terima') border-red-500 @enderror">
+                            <input wire:model="no_terima" type="text" readonly disabled class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed outline-none transition-all @error('no_terima') border-red-500 @enderror">
                             @error('no_terima') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                         </div>
 

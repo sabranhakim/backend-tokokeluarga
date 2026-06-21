@@ -45,7 +45,7 @@ class StorePenerimaanBarangRequest extends FormRequest
     {
         return [
             'id' => 'nullable|uuid|unique:penerimaan_barangs,id',
-            'no_terima' => 'required|string|unique:penerimaan_barangs,no_terima',
+            'no_terima' => 'nullable|string',
             'supplier_id' => 'required|exists:suppliers,id',
             'tgl_terima' => 'required|date',
             'foto_bon' => 'nullable|image|max:5120|mimes:jpg,png,jpeg', // Max 5MB
