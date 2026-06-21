@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\PenerimaanBarang;
 use App\Services\PenerimaanBarangService;
+use Illuminate\Http\Request;
 
 class PenerimaanBarangController extends Controller
 {
@@ -35,10 +36,11 @@ class PenerimaanBarangController extends Controller
         return view('penerimaan.trash');
     }
 
-    public function verify(PenerimaanBarang $penerimaanBarang)
+    public function verify(Request $request, PenerimaanBarang $penerimaanBarang)
     {
         try {
-            $this->penerimaanService->verify($penerimaanBarang->id);
+            $catatanVerifikasi = $request->input('catatan_verifikasi');
+            $this->penerimaanService->verify($penerimaanBarang->id, $catatanVerifikasi);
 
             return redirect()->back()
                 ->with('success', 'Penerimaan barang berhasil diverifikasi dan stok telah diperbarui.');

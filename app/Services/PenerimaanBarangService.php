@@ -83,9 +83,9 @@ class PenerimaanBarangService
      *
      * @return PenerimaanBarang
      */
-    public function verify(string $id)
+    public function verify(string $id, ?string $catatanVerifikasi = null)
     {
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $catatanVerifikasi) {
             $penerimaan = PenerimaanBarang::with(['supplier', 'detailPenerimaans.barang'])->findOrFail($id);
 
             if ($penerimaan->status_verifikasi === 'verified') {
@@ -95,6 +95,7 @@ class PenerimaanBarangService
             // 1. Update status
             $penerimaan->update([
                 'status_verifikasi' => 'verified',
+                'catatan_verifikasi' => $catatanVerifikasi,
             ]);
 
             // 2. Update stock for each item and record movement
@@ -112,7 +113,7 @@ class PenerimaanBarangService
                     'quantity' => $detail->jumlah,
                     'before_quantity' => $oldStok,
                     'after_quantity' => $newStok,
-                    'reason' => "Penerimaan Barang #{$penerimaan->no_terima}",
+                    'reason' => "Penerimaan Barang #{$penerimaan->no_terima}" . ($catatanVerifikasi ? " ({$catatanVerifikasi})" : ""),
                     'reference_id' => $penerimaan->id,
                     'reference_type' => PenerimaanBarang::class,
                 ]);
@@ -157,12 +158,18 @@ class PenerimaanBarangService
             $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
         }
 
+        $catatanText = '';
+        if ($penerimaan->catatan_verifikasi) {
+            $catatanText = "📝 Catatan Verifikasi: *{$penerimaan->catatan_verifikasi}*\n\n";
+        }
+
         $message = "✅ *VERIFIKASI PENERIMAAN BERHASIL*\n\n".
                    "Halo *{$supplier->nama_supplier}*,\n".
                    "Kami menginformasikan bahwa pengiriman barang Anda telah *SELESAI DIVERIFIKASI* oleh tim administrasi kami.\n\n".
                    "Detail:\n".
                    "📄 No. Terima: *{$penerimaan->no_terima}*\n".
                    '📅 Tgl Verifikasi: '.now()->format('d-m-Y H:i')."\n\n".
+                   $catatanText.
                    "Daftar Barang:\n".
                    $itemsList."\n".
                    "Status: *Telah Masuk ke Sistem Stok*\n\n".

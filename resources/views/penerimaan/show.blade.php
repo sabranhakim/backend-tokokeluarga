@@ -12,10 +12,13 @@
             @can('verify penerimaan')
                 <div class="flex items-center space-x-3">
                     @if($penerimaanBarang->status_verifikasi == 'pending')
-                    <form action="{{ route('penerimaan.verify', $penerimaanBarang) }}" method="POST">
+                    <form action="{{ route('penerimaan.verify', $penerimaanBarang) }}" method="POST" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                         @csrf
                         @method('PATCH')
-                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-emerald-100 transition-all flex items-center">
+                        <div class="relative flex-1 min-w-[280px]">
+                            <input type="text" name="catatan_verifikasi" placeholder="Catatan verifikasi (opsional)..." class="w-full px-4 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center shrink-0">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             Verifikasi Penerimaan
                         </button>
@@ -64,6 +67,14 @@
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Petugas Penerima</p>
                             <p class="text-sm font-medium text-slate-900">{{ $penerimaanBarang->user->name }}</p>
                         </div>
+                        @if($penerimaanBarang->status_verifikasi == 'verified')
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Catatan Verifikasi</p>
+                            <p class="text-sm font-medium text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1">
+                                {{ $penerimaanBarang->catatan_verifikasi ?: 'Tidak ada catatan' }}
+                            </p>
+                        </div>
+                        @endif
                     </div>
                 </div>
 

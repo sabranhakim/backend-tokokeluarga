@@ -23,6 +23,7 @@ class PenerimaanBarang extends Model
         'tgl_terima',
         'foto_bon',
         'status_verifikasi',
+        'catatan_verifikasi',
     ];
 
     protected $casts = [
