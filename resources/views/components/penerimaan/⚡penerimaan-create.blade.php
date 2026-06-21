@@ -19,6 +19,7 @@ new class extends Component {
 
     // Items list
     public $items = [];
+    public $showPreview = false;
 
     protected $rules = [
         'no_terima' => 'nullable|string',
@@ -59,6 +60,17 @@ new class extends Component {
         $this->items = array_values($this->items);
     }
 
+    public function showConfirmPreview()
+    {
+        $this->validate();
+        $this->showPreview = true;
+    }
+
+    public function closePreview()
+    {
+        $this->showPreview = false;
+    }
+
     public function save(PenerimaanBarangService $service)
     {
         if (!Gate::allows('create penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
@@ -73,6 +85,7 @@ new class extends Component {
             session()->flash('success', 'Penerimaan barang berhasil disimpan.');
             return redirect()->route('penerimaan.index');
         } catch (\Exception $e) {
+            $this->showPreview = false;
             $this->addError('general', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -95,7 +108,7 @@ new class extends Component {
         </a>
     </div>
 
-    <form wire:submit.prevent="save" class="space-y-6">
+    <form wire:submit.prevent="showConfirmPreview" class="space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Side: Header Info -->
             <div class="lg:col-span-1 space-y-6">
@@ -310,4 +323,118 @@ new class extends Component {
             </div>
         </div>
     </form>
+
+    <!-- Modal Preview Sebelum Submit -->
+    @if($showPreview)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-black text-slate-800 flex items-center">
+                    <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2m-6 9l2 2 4-4"/></svg>
+                    Konfirmasi & Ringkasan Penerimaan
+                </h3>
+                <button type="button" wire:click="closePreview" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Left info -->
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nomor Terima</p>
+                            <p class="text-sm font-mono font-bold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 inline-block mt-1">{{ $no_terima }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Supplier</p>
+                            <p class="text-sm font-bold text-slate-900 mt-1">
+                                {{ \App\Models\Supplier::find($supplier_id)?->nama_supplier ?? '-' }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal Terima</p>
+                            <p class="text-sm font-medium text-slate-900 mt-1">
+                                {{ $tgl_terima ? date('d F Y', strtotime($tgl_terima)) : '-' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right info (Foto Bon) -->
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Foto Bon</p>
+                        @if($foto_bon)
+                            <div class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 h-32 w-full max-w-[200px] shadow-inner flex items-center justify-center">
+                                <img src="{{ $foto_bon->temporaryUrl() }}" class="h-full w-full object-cover">
+                            </div>
+                        @else
+                            <div class="rounded-xl border border-slate-200 border-dashed bg-slate-50/50 h-32 w-full max-w-[200px] flex flex-col items-center justify-center text-slate-400 text-xs">
+                                <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Tidak ada foto
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+                    <div class="bg-slate-50/50 px-4 py-2 border-b border-slate-100">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Daftar Barang</span>
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/20 text-slate-400 text-[10px] font-black uppercase tracking-wider border-b border-slate-100">
+                                <th class="px-4 py-2">Barang</th>
+                                <th class="px-4 py-2 text-right">Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50 text-slate-700 text-xs">
+                            @php $totalQty = 0; @endphp
+                            @foreach($items as $item)
+                                @if($item['barang_id'])
+                                    @php 
+                                        $barangObj = \App\Models\Barang::find($item['barang_id']);
+                                        $totalQty += $item['jumlah'];
+                                    @endphp
+                                    <tr>
+                                        <td class="px-4 py-2.5">
+                                            <div class="font-bold text-slate-800">{{ $barangObj?->nama_barang }}</div>
+                                            <div class="font-mono text-[10px] text-slate-400">{{ $barangObj?->kode_barang }}</div>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right font-bold text-slate-900">
+                                            {{ $item['jumlah'] }} {{ $barangObj?->satuan }}
+                                        </td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                        </tbody>
+                        <tfoot class="bg-slate-50/50 text-xs font-bold border-t border-slate-100">
+                            <tr>
+                                <td class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
+                                <td class="px-4 py-3 text-right text-slate-950 font-black">{{ $totalQty }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button type="button" wire:click="closePreview" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors">
+                    Kembali & Edit
+                </button>
+                <button type="button" wire:click="save" wire:loading.attr="disabled" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-100 transition-all flex items-center active:scale-95 disabled:opacity-50">
+                    <svg wire:loading.remove wire:target="save" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <svg wire:loading wire:target="save" class="animate-spin h-4 w-4 mr-1.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Konfirmasi & Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
