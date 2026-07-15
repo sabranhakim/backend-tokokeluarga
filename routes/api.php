@@ -47,5 +47,6 @@ Route::prefix('v1')->group(function () {
         Route::get('penerimaan-barang', [PenerimaanBarangController::class, 'index'])->middleware('can:view penerimaan');
         Route::get('penerimaan-barang/{id}', [PenerimaanBarangController::class, 'show'])->middleware('can:view penerimaan');
         Route::post('penerimaan-barang', [PenerimaanBarangController::class, 'store'])->middleware('can:create penerimaan');
+        Route::post('penerimaan-barang/{id}/reject', [PenerimaanBarangController::class, 'reject'])->middleware('can:verify penerimaan');
     });
 });

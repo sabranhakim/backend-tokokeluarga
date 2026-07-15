@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePenerimaanBarangRequest;
 use App\Services\PenerimaanBarangService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PenerimaanBarangController extends Controller
 {
@@ -51,6 +52,31 @@ class PenerimaanBarangController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Reject the specified penerimaan barang.
+     */
+    public function reject(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'catatan_verifikasi' => 'required|string|max:1000',
+        ]);
+
+        try {
+            $penerimaan = $this->penerimaanService->reject($id, $request->input('catatan_verifikasi'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Penerimaan barang berhasil ditolak',
+                'data' => $penerimaan,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
         }
     }
 

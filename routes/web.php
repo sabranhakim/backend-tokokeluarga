@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [PenerimaanBarangController::class, 'create'])->name('create');
         Route::get('/{penerimaanBarang}', [PenerimaanBarangController::class, 'show'])->name('show');
         Route::patch('/{penerimaanBarang}/verify', [PenerimaanBarangController::class, 'verify'])->name('verify');
+        Route::post('/{penerimaanBarang}/reject', [PenerimaanBarangController::class, 'reject'])->name('reject');
         Route::delete('/{penerimaanBarang}', [PenerimaanBarangController::class, 'destroy'])->name('destroy');
     });
 
