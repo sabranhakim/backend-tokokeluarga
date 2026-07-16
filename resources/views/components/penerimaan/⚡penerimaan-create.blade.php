@@ -11,13 +11,11 @@ use Illuminate\Support\Facades\Gate;
 new class extends Component {
     use WithFileUploads;
 
-    // Header fields
     public $no_terima;
     public $supplier_id;
     public $tgl_terima;
     public $foto_bon;
 
-    // Items list
     public $items = [];
     public $showPreview = false;
 
@@ -43,7 +41,7 @@ new class extends Component {
         }
         $this->tgl_terima = date('Y-m-d');
         $this->no_terima = 'Otomatis (dibuat oleh sistem)';
-        $this->addItem(); // Start with one empty item
+        $this->addItem();
     }
 
     public function addItem()
@@ -110,7 +108,6 @@ new class extends Component {
 
     <form wire:submit.prevent="showConfirmPreview" class="space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Side: Header Info -->
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                     <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Informasi Penerimaan</h3>
@@ -186,7 +183,6 @@ new class extends Component {
                     </div>
                 </div>
 
-                <!-- Dokumen Bon Card -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                     <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Dokumentasi</h3>
                     
@@ -213,7 +209,6 @@ new class extends Component {
                                 </div>
                             </div>
 
-                            <!-- Progress Bar -->
                             <div x-show="isUploading" class="mt-3">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sedang Mengunggah...</span>
@@ -239,7 +234,6 @@ new class extends Component {
                 </div>
             </div>
 
-            <!-- Right Side: Items List -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
@@ -252,30 +246,66 @@ new class extends Component {
                     
                     <div class="p-6">
                         <div class="space-y-4">
+                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan])->toJson(); @endphp
                             @foreach($items as $index => $item)
                             <div wire:key="item-{{ $index }}" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
                                 <div class="md:col-span-7">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Barang</label>
-                                    <div wire:ignore x-data="{ 
-                                        value: @entangle('items.' . $index . '.barang_id'),
-                                        ts: null,
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cari SKU / Nama Barang</label>
+                                    <div wire:key="search-{{ $index }}" x-data="{
+                                        search: '',
+                                        selectedId: @entangle('items.{{ $index }}.barang_id'),
+                                        selectedLabel: '',
+                                        open: false,
+                                        barangs: {{ $barangsJson }},
+                                        get filtered() {
+                                            if (!this.search.trim()) return [];
+                                            const q = this.search.toLowerCase();
+                                            return this.barangs.filter(b =>
+                                                b.kode_barang.toLowerCase().includes(q) ||
+                                                b.nama_barang.toLowerCase().includes(q)
+                                            ).slice(0, 20);
+                                        },
+                                        select(barang) {
+                                            this.selectedId = barang.id;
+                                            this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang;
+                                            this.search = '';
+                                            this.open = false;
+                                        },
                                         init() {
-                                            this.ts = new TomSelect($refs.select, {
-                                                onChange: (val) => { this.value = val }
-                                            });
-                                            this.$watch('value', (val) => {
-                                                if (val !== this.ts.getValue()) {
-                                                    this.ts.setValue(val);
-                                                }
-                                            });
+                                            if (this.selectedId) {
+                                                const found = this.barangs.find(b => b.id === this.selectedId);
+                                                if (found) this.selectedLabel = found.kode_barang + ' - ' + found.nama_barang;
+                                            }
                                         }
-                                    }">
-                                        <select x-ref="select" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                            <option value="">Pilih Barang</option>
-                                            @foreach($barangs as $barang)
-                                                <option value="{{ $barang->id }}">{{ $barang->kode_barang }} - {{ $barang->nama_barang }} ({{ $barang->satuan }})</option>
-                                            @endforeach
-                                        </select>
+                                    }" class="relative">
+                                        <div class="relative">
+                                            <input x-model="search"
+                                                   @click="open = true"
+                                                   @click.outside="open = false"
+                                                   @input="open = true"
+                                                   type="text"
+                                                   placeholder="Ketik SKU atau nama barang..."
+                                                   class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                                            <template x-if="selectedId && !search">
+                                                <div class="absolute inset-0 flex items-center px-4 text-sm text-slate-400 pointer-events-none" x-text="selectedLabel"></div>
+                                            </template>
+                                        </div>
+                                        <div x-show="open && search.trim() && filtered.length > 0"
+                                             x-cloak
+                                             class="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                                            <template x-for="barang in filtered" :key="barang.id">
+                                                <div @click="select(barang)"
+                                                     class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors">
+                                                    <div class="text-sm font-bold text-slate-800" x-text="barang.kode_barang"></div>
+                                                    <div class="text-xs text-slate-500" x-text="barang.nama_barang + ' (' + barang.satuan + ')'"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div x-show="open && search.trim() && filtered.length === 0"
+                                             x-cloak
+                                             class="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-4 text-center text-sm text-slate-400">
+                                            Barang tidak ditemukan
+                                        </div>
                                     </div>
                                     @error("items.$index.barang_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
@@ -324,11 +354,9 @@ new class extends Component {
         </div>
     </form>
 
-    <!-- Modal Preview Sebelum Submit -->
     @if($showPreview)
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in duration-200">
-            <!-- Modal Header -->
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="text-lg font-black text-slate-800 flex items-center">
                     <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2m-6 9l2 2 4-4"/></svg>
@@ -339,10 +367,8 @@ new class extends Component {
                 </button>
             </div>
 
-            <!-- Modal Content -->
             <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Left info -->
                     <div class="space-y-4">
                         <div>
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nomor Terima</p>
@@ -362,7 +388,6 @@ new class extends Component {
                         </div>
                     </div>
 
-                    <!-- Right info (Foto Bon) -->
                     <div>
                         <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Foto Bon</p>
                         @if($foto_bon)
@@ -378,7 +403,6 @@ new class extends Component {
                     </div>
                 </div>
 
-                <!-- Items Table -->
                 <div class="border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                     <div class="bg-slate-50/50 px-4 py-2 border-b border-slate-100">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Daftar Barang</span>
@@ -420,7 +444,6 @@ new class extends Component {
                 </div>
             </div>
 
-            <!-- Modal Footer -->
             <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
                 <button type="button" wire:click="closePreview" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors">
                     Kembali & Edit

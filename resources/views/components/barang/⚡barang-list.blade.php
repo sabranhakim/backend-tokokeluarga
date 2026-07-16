@@ -13,6 +13,10 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
+    public $filterKategori = '';
+    public $filterSupplier = '';
+    public $filterStatus = '';
+    public $filterStok = '';
     public $showModal = false;
     public $isEdit = false;
 
@@ -46,6 +50,17 @@ new class extends Component {
     {
         return [
             'barangs' => Barang::withoutGlobalScope('active')->with(['kategori', 'supplier'])
+                ->when($this->filterKategori, fn($q) => $q->where('kategori_id', $this->filterKategori))
+                ->when($this->filterSupplier, fn($q) => $q->where('supplier_id', $this->filterSupplier))
+                ->when($this->filterStatus !== '', fn($q) => $q->where('is_active', $this->filterStatus))
+                ->when($this->filterStok, function($q) {
+                    match ($this->filterStok) {
+                        'kritis' => $q->where('stok', 0),
+                        'rendah' => $q->whereColumn('stok', '<=', 'stok_minimal')->where('stok', '>', 0),
+                        'normal' => $q->whereColumn('stok', '>', 'stok_minimal'),
+                        default => null,
+                    };
+                })
                 ->where(function($query) {
                     $query->where('nama_barang', 'like', '%' . $this->search . '%')
                         ->orWhere('kode_barang', 'like', '%' . $this->search . '%');
@@ -69,6 +84,26 @@ new class extends Component {
     }
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterKategori()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterSupplier()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStok()
     {
         $this->resetPage();
     }
@@ -228,6 +263,41 @@ new class extends Component {
             </button>
             @endcan
         </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 mb-4">
+        <select wire:model.live="filterKategori" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Semua Kategori</option>
+            @foreach($kategoris as $kategori)
+                <option value="{{ $kategori->id }}">{{ $kategori->nama_kategori }}</option>
+            @endforeach
+        </select>
+
+        <select wire:model.live="filterSupplier" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Semua Supplier</option>
+            @foreach($suppliers as $supplier)
+                <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+            @endforeach
+        </select>
+
+        <select wire:model.live="filterStatus" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Semua Status</option>
+            <option value="1">Aktif</option>
+            <option value="0">Nonaktif</option>
+        </select>
+
+        <select wire:model.live="filterStok" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Semua Stok</option>
+            <option value="kritis">Stok Habis (0)</option>
+            <option value="rendah">Stok Rendah (<= Min)</option>
+            <option value="normal">Stok Normal</option>
+        </select>
+
+        @if($filterKategori || $filterSupplier || $filterStatus !== '' || $filterStok)
+        <button wire:click="$set('filterKategori', ''); $set('filterSupplier', ''); $set('filterStatus', ''); $set('filterStok', '')" class="px-3 py-2 text-sm text-red-600 hover:text-red-700 font-medium hover:bg-red-50 rounded-lg transition-colors">
+            Reset Filter
+        </button>
+        @endif
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

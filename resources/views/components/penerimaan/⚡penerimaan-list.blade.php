@@ -3,12 +3,17 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PenerimaanBarang;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     use WithPagination;
 
     public $search = '';
+    public $filterSupplier = '';
+    public $filterStatus = '';
+    public $filterDateFrom = '';
+    public $filterDateTo = '';
 
     public function mount()
     {
@@ -22,16 +27,43 @@ new class extends Component {
     {
         return [
             'penerimaans' => PenerimaanBarang::with(['supplier', 'user'])
-                ->where('no_terima', 'like', '%' . $this->search . '%')
-                ->orWhereHas('supplier', function($query) {
-                    $query->where('nama_supplier', 'like', '%' . $this->search . '%');
+                ->when($this->filterSupplier, fn($q) => $q->where('supplier_id', $this->filterSupplier))
+                ->when($this->filterStatus, fn($q) => $q->where('status_verifikasi', $this->filterStatus))
+                ->when($this->filterDateFrom, fn($q) => $q->whereDate('tgl_terima', '>=', $this->filterDateFrom))
+                ->when($this->filterDateTo, fn($q) => $q->whereDate('tgl_terima', '<=', $this->filterDateTo))
+                ->where(function($query) {
+                    $query->where('no_terima', 'like', '%' . $this->search . '%')
+                        ->orWhereHas('supplier', function($q) {
+                            $q->where('nama_supplier', 'like', '%' . $this->search . '%');
+                        });
                 })
                 ->latest()
                 ->paginate(10),
+            'suppliers' => Supplier::orderBy('nama_supplier')->get(),
         ];
     }
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterSupplier()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterDateFrom()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterDateTo()
     {
         $this->resetPage();
     }
@@ -78,6 +110,32 @@ new class extends Component {
             </a>
             @endcan
         </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 mb-4 items-center">
+        <select wire:model.live="filterSupplier" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Semua Supplier</option>
+            @foreach($suppliers as $supplier)
+                <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+            @endforeach
+        </select>
+
+        <select wire:model.live="filterStatus" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Semua Status</option>
+            <option value="pending">Pending</option>
+            <option value="verified">Verified</option>
+            <option value="rejected">Ditolak</option>
+        </select>
+
+        <input wire:model.live="filterDateFrom" type="date" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Dari Tanggal">
+        <p>s/d</p>
+        <input wire:model.live="filterDateTo" type="date" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Sampai Tanggal">
+
+        @if($filterSupplier || $filterStatus || $filterDateFrom || $filterDateTo)
+        <button wire:click="$set('filterSupplier', ''); $set('filterStatus', ''); $set('filterDateFrom', ''); $set('filterDateTo', '')" class="px-3 py-2 text-sm text-red-600 hover:text-red-700 font-medium hover:bg-red-50 rounded-lg transition-colors">
+            Reset Filter
+        </button>
+        @endif
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
