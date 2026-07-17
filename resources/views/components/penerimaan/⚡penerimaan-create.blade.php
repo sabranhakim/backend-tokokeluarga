@@ -79,7 +79,7 @@ new class extends Component {
 
         try {
             $service->store($validated, $this->foto_bon);
-            
+
             session()->flash('success', 'Penerimaan barang berhasil disimpan.');
             return redirect()->route('penerimaan.index');
         } catch (\Exception $e) {
@@ -111,7 +111,7 @@ new class extends Component {
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                     <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Informasi Penerimaan</h3>
-                    
+
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">No. Terima</label>
@@ -121,9 +121,9 @@ new class extends Component {
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">Tanggal Terima</label>
-                            <div class="relative group" 
-                                 wire:ignore 
-                                 x-data="{ 
+                            <div class="relative group"
+                                 wire:ignore
+                                 x-data="{
                                     value: @entangle('tgl_terima'),
                                     instance: null,
                                     init() {
@@ -146,8 +146,8 @@ new class extends Component {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
                                 </div>
-                                <input x-ref="input" 
-                                       type="text" 
+                                <input x-ref="input"
+                                       type="text"
                                        readonly
                                        class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white cursor-pointer @error('tgl_terima') border-red-500 @enderror"
                                        placeholder="Pilih Tanggal">
@@ -157,7 +157,7 @@ new class extends Component {
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">Supplier</label>
-                            <div wire:ignore x-data="{ 
+                            <div wire:ignore x-data="{
                                 value: @entangle('supplier_id'),
                                 ts: null,
                                 init() {
@@ -185,11 +185,11 @@ new class extends Component {
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                     <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Dokumentasi</h3>
-                    
+
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-1">Foto Bon (Opsional)</label>
-                        
-                        <div 
+
+                        <div
                             x-data="{ isUploading: false, progress: 0 }"
                             x-on:livewire-upload-start="isUploading = true"
                             x-on:livewire-upload-finish="isUploading = false"
@@ -243,7 +243,7 @@ new class extends Component {
                             Tambah Baris
                         </button>
                     </div>
-                    
+
                     <div class="p-6">
                         <div class="space-y-4">
                             @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan])->toJson(); @endphp
@@ -253,7 +253,7 @@ new class extends Component {
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cari SKU / Nama Barang</label>
                                     <div wire:key="search-{{ $index }}" x-data="{
                                         search: '',
-                                        selectedId: @entangle('items.{{ $index }}.barang_id'),
+                                        selectedId: @entangle('items.' . $index . '.barang_id'),
                                         selectedLabel: '',
                                         open: false,
                                         barangs: {{ $barangsJson }},
@@ -284,10 +284,10 @@ new class extends Component {
                                                    @click.outside="open = false"
                                                    @input="open = true"
                                                    type="text"
-                                                   placeholder="Ketik SKU atau nama barang..."
+                                                   :placeholder="selectedId ? '' : 'Ketik SKU atau nama barang...'"
                                                    class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
                                             <template x-if="selectedId && !search">
-                                                <div class="absolute inset-0 flex items-center px-4 text-sm text-slate-400 pointer-events-none" x-text="selectedLabel"></div>
+                                                <div class="absolute inset-0 flex items-center px-4 text-sm font-bold text-slate-600 pointer-events-none" x-text="selectedLabel"></div>
                                             </template>
                                         </div>
                                         <div x-show="open && search.trim() && filtered.length > 0"
@@ -330,11 +330,11 @@ new class extends Component {
                     </div>
 
                     <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                        <button type="submit" 
+                        <button type="submit"
                                 wire:loading.attr="disabled"
                                 wire:target="save"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center disabled:opacity-70 disabled:cursor-not-allowed">
-                            
+
                             <span wire:loading.remove wire:target="save" class="flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                                 Simpan Penerimaan
@@ -418,7 +418,7 @@ new class extends Component {
                             @php $totalQty = 0; @endphp
                             @foreach($items as $item)
                                 @if($item['barang_id'])
-                                    @php 
+                                    @php
                                         $barangObj = \App\Models\Barang::find($item['barang_id']);
                                         $totalQty += $item['jumlah'];
                                     @endphp
