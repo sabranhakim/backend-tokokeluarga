@@ -22,6 +22,17 @@ Route::prefix('v1')->group(function () {
         ]);
     })->middleware('throttle:api');
 
+    // Server time endpoint (public — for time sync with mobile)
+    Route::get('/server-time', function () {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'server_time' => now()->toIso8601String(),
+                'timezone' => config('app.timezone'),
+            ],
+        ]);
+    });
+
     Route::get('/user', function (Request $request) {
         return $request->user();
     })->middleware(['auth:sanctum', 'throttle:api']);
@@ -47,6 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::get('penerimaan-barang', [PenerimaanBarangController::class, 'index'])->middleware('can:view penerimaan');
         Route::get('penerimaan-barang/{id}', [PenerimaanBarangController::class, 'show'])->middleware('can:view penerimaan');
         Route::post('penerimaan-barang', [PenerimaanBarangController::class, 'store'])->middleware('can:create penerimaan');
+        Route::post('penerimaan-barang/{id}/verify', [PenerimaanBarangController::class, 'verify'])->middleware('can:verify penerimaan');
         Route::post('penerimaan-barang/{id}/reject', [PenerimaanBarangController::class, 'reject'])->middleware('can:verify penerimaan');
     });
 });

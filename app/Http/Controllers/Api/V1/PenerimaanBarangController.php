@@ -56,6 +56,31 @@ class PenerimaanBarangController extends Controller
     }
 
     /**
+     * Verify the specified penerimaan barang and update stock.
+     */
+    public function verify(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'catatan_verifikasi' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $penerimaan = $this->penerimaanService->verify($id, $request->input('catatan_verifikasi'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Penerimaan barang berhasil diverifikasi dan stok telah diperbarui.',
+                'data' => $penerimaan,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
      * Reject the specified penerimaan barang.
      */
     public function reject(Request $request, string $id): JsonResponse
