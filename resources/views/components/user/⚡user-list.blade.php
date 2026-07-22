@@ -216,7 +216,7 @@ new class extends Component {
 
     <!-- Modal User -->
     @if($showModal)
-    <div class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h4 class="text-lg font-bold text-slate-800">{{ $isEdit ? 'Edit User' : 'Tambah User' }}</h4>
@@ -253,9 +253,9 @@ new class extends Component {
                     @error('selected_roles') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
             </div>
-            <div class="px-6 py-4 bg-slate-50 flex justify-end space-x-3">
+            <div class="px-6 py-4 bg-slate-50 flex justify-end space-x-3 rounded-b-2xl">
                 <button wire:click="$set('showModal', false)" class="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Batal</button>
-                <button wire:click="save" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition-colors">Simpan</button>
+                <button wire:click="save" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-blue-200">Simpan</button>
             </div>
         </div>
     </div>

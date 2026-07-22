@@ -174,7 +174,7 @@ new class extends Component {
 
     <!-- Modal Role -->
     @if($showModal)
-    <div class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h4 class="text-lg font-bold text-slate-800">{{ $isEdit ? 'Edit Role' : 'Tambah Role' }}</h4>
