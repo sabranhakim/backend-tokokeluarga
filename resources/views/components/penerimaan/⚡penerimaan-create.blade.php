@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Jobs\ProcessPenerimaanFotoJob;
 use App\Models\Supplier;
 use App\Models\Barang;
 use App\Services\PenerimaanBarangService;
@@ -27,6 +28,8 @@ new class extends Component {
         'items' => 'required|array|min:1',
         'items.*.barang_id' => 'required|exists:barangs,id|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
+        'items.*.batch_number' => 'nullable|string|max:100',
+        'items.*.tgl_kadaluarsa' => 'nullable|date',
     ];
 
     protected $messages = [
@@ -49,7 +52,21 @@ new class extends Component {
         $this->items[] = [
             'barang_id' => '',
             'jumlah' => 1,
+            'batch_number' => '',
+            'tgl_kadaluarsa' => '',
         ];
+    }
+
+    public function generateBatchNumber($index, $barangId)
+    {
+        if (!isset($this->items[$index])) return;
+
+        $barang = Barang::find($barangId);
+        if (!$barang) return;
+
+        if (empty($this->items[$index]['batch_number'])) {
+            $this->items[$index]['batch_number'] = 'BATCH-' . $barang->kode_barang . '-' . now()->format('Ymd');
+        }
     }
 
     public function removeItem($index)
@@ -78,9 +95,20 @@ new class extends Component {
         $validated = $this->validate();
 
         try {
-            $service->store($validated, $this->foto_bon);
+            $penerimaan = $service->store($validated);
 
-            session()->flash('success', 'Penerimaan barang berhasil disimpan.');
+            if ($this->foto_bon) {
+                $ext = $this->foto_bon->getClientOriginalExtension();
+                $tempPath = sys_get_temp_dir() . '/penerimaan_foto_' . $penerimaan->id . '_' . time() . '.' . $ext;
+                copy($this->foto_bon->getRealPath(), $tempPath);
+
+                ProcessPenerimaanFotoJob::dispatch($penerimaan->id, $tempPath);
+            }
+
+            $msg = $this->foto_bon
+                ? 'Penerimaan barang berhasil disimpan. Foto sedang diproses di background.'
+                : 'Penerimaan barang berhasil disimpan.';
+            session()->flash('success', $msg);
             return redirect()->route('penerimaan.index');
         } catch (\Exception $e) {
             $this->showPreview = false;
@@ -248,8 +276,9 @@ new class extends Component {
                         <div class="space-y-4">
                             @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan])->toJson(); @endphp
                             @foreach($items as $index => $item)
-                            <div wire:key="item-{{ $index }}" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
-                                <div class="md:col-span-7">
+                            <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                <div class="md:col-span-5">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cari SKU / Nama Barang</label>
                                     <div wire:key="search-{{ $index }}" x-data="{
                                         search: '',
@@ -270,6 +299,7 @@ new class extends Component {
                                             this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang;
                                             this.search = '';
                                             this.open = false;
+                                            $wire.generateBatchNumber({{ $index }}, barang.id);
                                         },
                                         init() {
                                             if (this.selectedId) {
@@ -309,10 +339,20 @@ new class extends Component {
                                     </div>
                                     @error("items.$index.barang_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="md:col-span-4">
+                                <div class="md:col-span-2">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah</label>
                                     <input wire:model="items.{{ $index }}.jumlah" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                                     @error("items.$index.jumlah") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Batch</label>
+                                    <input wire:model="items.{{ $index }}.batch_number" type="text" placeholder="Opsional" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                    @error("items.$index.batch_number") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tgl. Kadaluarsa</label>
+                                    <input wire:model="items.{{ $index }}.tgl_kadaluarsa" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                    @error("items.$index.tgl_kadaluarsa") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="md:col-span-1 flex justify-center">
                                     @if(count($items) > 1)
@@ -322,6 +362,7 @@ new class extends Component {
                                     @endif
                                 </div>
                             </div>
+                        </div>
                             @endforeach
                         </div>
 
@@ -411,6 +452,8 @@ new class extends Component {
                         <thead>
                             <tr class="bg-slate-50/20 text-slate-400 text-[10px] font-black uppercase tracking-wider border-b border-slate-100">
                                 <th class="px-4 py-2">Barang</th>
+                                <th class="px-4 py-2">Batch</th>
+                                <th class="px-4 py-2">Kadaluarsa</th>
                                 <th class="px-4 py-2 text-right">Jumlah</th>
                             </tr>
                         </thead>
@@ -427,6 +470,12 @@ new class extends Component {
                                             <div class="font-bold text-slate-800">{{ $barangObj?->nama_barang }}</div>
                                             <div class="font-mono text-[10px] text-slate-400">{{ $barangObj?->kode_barang }}</div>
                                         </td>
+                                        <td class="px-4 py-2.5">
+                                            <span class="font-mono text-slate-600">{{ $item['batch_number'] ?: '-' }}</span>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <span class="text-slate-600">{{ $item['tgl_kadaluarsa'] ?: '-' }}</span>
+                                        </td>
                                         <td class="px-4 py-2.5 text-right font-bold text-slate-900">
                                             {{ $item['jumlah'] }} {{ $barangObj?->satuan }}
                                         </td>
@@ -436,7 +485,7 @@ new class extends Component {
                         </tbody>
                         <tfoot class="bg-slate-50/50 text-xs font-bold border-t border-slate-100">
                             <tr>
-                                <td class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
+                                <td colspan="3" class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
                                 <td class="px-4 py-3 text-right text-slate-950 font-black">{{ $totalQty }}</td>
                             </tr>
                         </tfoot>

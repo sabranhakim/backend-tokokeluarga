@@ -17,6 +17,12 @@ class DetailPenerimaan extends Model
         'penerimaan_barang_id',
         'barang_id',
         'jumlah',
+        'batch_number',
+        'tgl_kadaluarsa',
+    ];
+
+    protected $casts = [
+        'tgl_kadaluarsa' => 'date',
     ];
 
     public function penerimaanBarang(): BelongsTo
@@ -27,5 +33,10 @@ class DetailPenerimaan extends Model
     public function barang(): BelongsTo
     {
         return $this->belongsTo(Barang::class);
+    }
+
+    public function barangStoks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BarangStok::class);
     }
 }

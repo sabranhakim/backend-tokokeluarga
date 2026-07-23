@@ -110,6 +110,8 @@
                             <tr class="bg-slate-50/30">
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kode Barang</th>
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Barang</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kadaluarsa</th>
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Jumlah</th>
                             </tr>
                         </thead>
@@ -123,6 +125,12 @@
                                     <div class="text-sm font-medium text-slate-900">{{ $detail->barang->nama_barang }}</div>
                                     <div class="text-xs text-slate-500">{{ $detail->barang->satuan }}</div>
                                 </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-mono text-xs text-slate-600">{{ $detail->batch_number ?: '-' }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-xs text-slate-600">{{ $detail->tgl_kadaluarsa ? $detail->tgl_kadaluarsa->format('d/m/Y') : '-' }}</span>
+                                </td>
                                 <td class="px-6 py-4 text-right">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-50 text-blue-700">
                                         {{ $detail->jumlah }}
@@ -133,7 +141,7 @@
                         </tbody>
                         <tfoot class="bg-slate-50/50">
                             <tr>
-                                <td colspan="2" class="px-6 py-4 text-sm font-bold text-slate-600 text-right uppercase">Total Item</td>
+                                <td colspan="4" class="px-6 py-4 text-sm font-bold text-slate-600 text-right uppercase">Total Item</td>
                                 <td class="px-6 py-4 text-right">
                                     <span class="text-lg font-bold text-slate-900">{{ $penerimaanBarang->detailPenerimaans->sum('jumlah') }}</span>
                                 </td>

@@ -6,18 +6,10 @@ use App\Models\Barang;
 use App\Models\Kategori;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Barang>
- */
 class BarangFactory extends Factory
 {
     protected $model = Barang::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         $hargaBeli = $this->faker->numberBetween(5000, 100000);
@@ -32,7 +24,6 @@ class BarangFactory extends Factory
             'harga_jual' => $hargaJual,
             'stok' => $this->faker->numberBetween(0, 500),
             'stok_minimal' => $this->faker->numberBetween(5, 50),
-            'tgl_kadaluarsa' => $this->faker->optional(0.8)->dateTimeBetween('+1 month', '+2 years'),
         ];
     }
 }

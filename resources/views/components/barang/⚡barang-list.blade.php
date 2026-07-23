@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Barang;
+use App\Models\BarangStok;
 use App\Models\Kategori;
 use App\Models\Supplier;
 use App\Models\StockMovement;
@@ -22,7 +23,7 @@ new class extends Component {
 
     // Form fields
     public $barangId;
-    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10, $tgl_kadaluarsa;
+    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10;
 
     protected $rules = [
         'kode_barang' => 'required|unique:barangs,kode_barang',
@@ -32,9 +33,7 @@ new class extends Component {
         'satuan' => 'required',
         'harga_beli' => 'required|numeric|min:0',
         'harga_jual' => 'required|numeric|min:0',
-        'stok' => 'required|numeric|min:0',
         'stok_minimal' => 'required|numeric|min:0',
-        'tgl_kadaluarsa' => 'nullable|date',
     ];
 
     public function mount()
@@ -148,7 +147,6 @@ new class extends Component {
         $this->harga_jual = 0;
         $this->stok = 0;
         $this->stok_minimal = 10;
-        $this->tgl_kadaluarsa = null;
         $this->isEdit = false;
     }
 
@@ -169,7 +167,6 @@ new class extends Component {
         $this->harga_jual = $barang->harga_jual;
         $this->stok = $barang->stok;
         $this->stok_minimal = $barang->stok_minimal;
-        $this->tgl_kadaluarsa = $barang->tgl_kadaluarsa ? $barang->tgl_kadaluarsa->format('Y-m-d') : null;
         $this->isEdit = true;
         $this->showModal = true;
     }
@@ -190,35 +187,12 @@ new class extends Component {
         DB::transaction(function () use ($validated) {
             if ($this->isEdit) {
                 $barang = Barang::withoutGlobalScope('active')->find($this->barangId);
-                $oldStok = $barang->stok;
+                $validated['stok'] = $barang->stok;
                 $barang->update($validated);
-
-                if ($oldStok != $validated['stok']) {
-                    StockMovement::create([
-                        'barang_id' => $barang->id,
-                        'user_id' => auth()->id(),
-                        'type' => 'adjustment',
-                        'quantity' => $validated['stok'] - $oldStok,
-                        'before_quantity' => $oldStok,
-                        'after_quantity' => $validated['stok'],
-                        'reason' => 'Koreksi Stok Manual (Edit Barang)',
-                    ]);
-                }
                 $this->dispatch('notify', 'Barang berhasil diperbarui');
             } else {
+                $validated['stok'] = 0;
                 $barang = Barang::create($validated);
-
-                if ($barang->stok > 0) {
-                    StockMovement::create([
-                        'barang_id' => $barang->id,
-                        'user_id' => auth()->id(),
-                        'type' => 'in',
-                        'quantity' => $barang->stok,
-                        'before_quantity' => 0,
-                        'after_quantity' => $barang->stok,
-                        'reason' => 'Saldo Awal (Inisialisasi)',
-                    ]);
-                }
                 $this->dispatch('notify', 'Barang berhasil ditambahkan');
             }
         });
@@ -312,6 +286,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Jual</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Stok / Min</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Batch</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -352,6 +327,14 @@ new class extends Component {
                                 </span>
                                 <span class="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-tighter">Min: {{ $barang->stok_minimal }}</span>
                             </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            @php
+                                $batchCount = \App\Models\BarangStok::where('barang_id', $barang->id)->where('stok', '>', 0)->count();
+                            @endphp
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border {{ $batchCount > 0 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-400 border-slate-200' }}">
+                                {{ $batchCount }} batch
+                            </span>
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             <a href="{{ route('barang.show', $barang->id) }}" class="text-slate-600 hover:text-blue-600 font-medium" title="Detail Barang">
@@ -469,10 +452,13 @@ new class extends Component {
                         @error('satuan') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Stok Awal -->
+                    <!-- Stok (read-only, dikelola via penerimaan) -->
                     <div class="space-y-1">
-                        <label class="block text-sm font-bold text-slate-700">Stok</label>
-                        <input wire:model="stok" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok') border-red-500 @enderror">
+                        <label class="block text-sm font-bold text-slate-700">Stok Saat Ini</label>
+                        <div class="flex items-center gap-2">
+                            <input wire:model="stok" type="number" readonly disabled class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed outline-none">
+                            <span class="text-xs text-slate-400 italic">Dikelola via penerimaan barang</span>
+                        </div>
                         @error('stok') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -481,13 +467,6 @@ new class extends Component {
                         <label class="block text-sm font-bold text-slate-700">Batas Stok Minimal (Alert)</label>
                         <input wire:model="stok_minimal" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok_minimal') border-red-500 @enderror">
                         @error('stok_minimal') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <!-- Tgl Kadaluarsa -->
-                    <div class="space-y-1">
-                        <label class="block text-sm font-bold text-slate-700">Tgl. Kadaluarsa</label>
-                        <input wire:model="tgl_kadaluarsa" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('tgl_kadaluarsa') border-red-500 @enderror">
-                        @error('tgl_kadaluarsa') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Harga Beli -->

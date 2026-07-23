@@ -53,6 +53,8 @@ class StorePenerimaanBarangRequest extends FormRequest
             'items.*.id' => 'nullable|uuid|unique:detail_penerimaans,id',
             'items.*.barang_id' => 'required|exists:barangs,id|distinct',
             'items.*.jumlah' => 'required|integer|min:1',
+            'items.*.batch_number' => 'nullable|string|max:100',
+            'items.*.tgl_kadaluarsa' => 'nullable|date',
         ];
     }
 

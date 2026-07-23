@@ -16,7 +16,7 @@ class BarangController extends Controller
     {
         $search = $request->query('search');
 
-        $barangs = Barang::with('kategori')
+        $barangs = Barang::with('kategori', 'barangStoks')
             ->when($search, function ($query, $search) {
                 return $query->where('nama_barang', 'like', "%{$search}%")
                     ->orWhere('kode_barang', 'like', "%{$search}%");
@@ -37,7 +37,7 @@ class BarangController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $barang = Barang::with('kategori')->findOrFail($id);
+            $barang = Barang::with('kategori', 'barangStoks')->findOrFail($id);
 
             return response()->json([
                 'success' => true,

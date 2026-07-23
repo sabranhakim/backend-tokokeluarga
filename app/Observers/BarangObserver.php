@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Notification;
 
 class BarangObserver
 {
-    /**
-     * Handle the Barang "updated" event.
-     */
     public function updated(Barang $barang): void
     {
         if ($barang->stok <= $barang->stok_minimal) {
@@ -20,9 +17,6 @@ class BarangObserver
         }
     }
 
-    /**
-     * Handle the Barang "created" event.
-     */
     public function created(Barang $barang): void
     {
         if ($barang->stok <= $barang->stok_minimal) {

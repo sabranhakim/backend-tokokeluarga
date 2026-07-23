@@ -88,7 +88,6 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kode</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Barang</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Tgl. Kadaluarsa</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Dihapus Pada</th>
                         @can('manage trash')
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
@@ -107,13 +106,6 @@ new class extends Component {
                         <td class="px-6 py-4">
                             <span class="text-sm text-slate-600">{{ $barang->kategori->nama_kategori ?? '-' }}</span>
                         </td>
-                        <td class="px-6 py-4 text-center">
-                            @if($barang->tgl_kadaluarsa)
-                                <span class="text-sm text-slate-600">{{ $barang->tgl_kadaluarsa->format('d/m/Y') }}</span>
-                            @else
-                                <span class="text-xs text-slate-400 italic">-</span>
-                            @endif
-                        </td>
                         <td class="px-6 py-4 text-sm text-right text-slate-600">
                             {{ $barang->deleted_at?->format('d/m/Y H:i') ?? '-' }}
                         </td>
@@ -130,7 +122,7 @@ new class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center">
+                        <td colspan="4" class="px-6 py-10 text-center">
                             <p class="text-slate-500 italic text-sm">Trash kosong.</p>
                         </td>
                     </tr>

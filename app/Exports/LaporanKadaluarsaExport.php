@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Barang;
+use App\Models\BarangStok;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -20,12 +20,10 @@ class LaporanKadaluarsaExport implements FromCollection, WithHeadings, WithMappi
         $this->days = $days;
     }
 
-    /**
-    * @return \Illuminate\Support\Collection
-    */
     public function collection()
     {
-        $query = Barang::with('kategori')
+        $query = BarangStok::with('barang.kategori')
+            ->where('stok', '>', 0)
             ->whereNotNull('tgl_kadaluarsa');
 
         if ($this->days == 'already_expired') {
@@ -45,14 +43,16 @@ class LaporanKadaluarsaExport implements FromCollection, WithHeadings, WithMappi
         return [
             'Nama Barang',
             'Kategori',
+            'Batch',
+            'Stok',
             'Tanggal Kadaluarsa',
             'Sisa Waktu',
         ];
     }
 
-    public function map($barang): array
+    public function map($barangStok): array
     {
-        $daysDiff = (int) now()->diffInDays($barang->tgl_kadaluarsa, false);
+        $daysDiff = (int) now()->diffInDays($barangStok->tgl_kadaluarsa, false);
         
         if ($daysDiff < 0) {
             $status = 'Sudah Kadaluarsa (' . abs($daysDiff) . ' hari lalu)';
@@ -63,9 +63,11 @@ class LaporanKadaluarsaExport implements FromCollection, WithHeadings, WithMappi
         }
 
         return [
-            $barang->nama_barang,
-            $barang->kategori->nama_kategori ?? '-',
-            $barang->tgl_kadaluarsa->format('d/m/Y'),
+            $barangStok->barang->nama_barang ?? '-',
+            $barangStok->barang->kategori->nama_kategori ?? '-',
+            $barangStok->batch_number ?? '-',
+            $barangStok->stok,
+            $barangStok->tgl_kadaluarsa->format('d/m/Y'),
             $status,
         ];
     }

@@ -51,6 +51,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/penerimaan/{id}/force-delete', [PenerimaanBarangController::class, 'forceDelete'])->name('penerimaan.force-delete');
     });
 
+    // Barang Stok Routes
+    Route::get('/barang-stok', [\App\Http\Controllers\Web\BarangStokController::class, 'index'])->name('barang-stok.index');
+
     // Resource Routes
     Route::get('/barang/history', function () {
         return view('barang.history-all');

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Barang;
+use App\Models\BarangStok;
 use App\Models\DetailPenerimaan;
 use App\Models\PenerimaanBarang;
 use App\Models\StockMovement;
@@ -60,6 +61,8 @@ class PenerimaanBarangService
                     'penerimaan_barang_id' => $penerimaan->id,
                     'barang_id' => $item['barang_id'],
                     'jumlah' => $item['jumlah'],
+                    'batch_number' => $item['batch_number'] ?? null,
+                    'tgl_kadaluarsa' => $item['tgl_kadaluarsa'] ?? null,
                 ]);
             }
 
@@ -98,38 +101,56 @@ class PenerimaanBarangService
                 'catatan_verifikasi' => $catatanVerifikasi,
             ]);
 
-            // 2. Update stock for each item and record movement
+            // 2. Create batch stock entries and update stock for each item
             foreach ($penerimaan->detailPenerimaans as $detail) {
                 $barang = Barang::where('id', $detail->barang_id)->lockForUpdate()->firstOrFail();
-                $oldStok = $barang->stok;
+                $oldStokTotal = $barang->stok;
+
+                // Create batch stock entry (BarangStok)
+                $barangStok = BarangStok::create([
+                    'barang_id' => $barang->id,
+                    'detail_penerimaan_id' => $detail->id,
+                    'penerimaan_barang_id' => $penerimaan->id,
+                    'batch_number' => $detail->batch_number,
+                    'stok' => $detail->jumlah,
+                    'tgl_kadaluarsa' => $detail->tgl_kadaluarsa,
+                    'tgl_masuk' => $penerimaan->tgl_terima,
+                    'harga_beli' => $barang->harga_beli,
+                ]);
+
+                // Update cached total stock on barang
                 $barang->increment('stok', $detail->jumlah);
-                $newStok = $barang->stok;
+                $newStokTotal = $barang->stok;
 
                 // Record Stock Movement for Audit
                 StockMovement::create([
                     'barang_id' => $barang->id,
+                    'barang_stok_id' => $barangStok->id,
                     'user_id' => auth()->id(),
                     'type' => 'in',
                     'quantity' => $detail->jumlah,
-                    'before_quantity' => $oldStok,
-                    'after_quantity' => $newStok,
+                    'before_quantity' => $oldStokTotal,
+                    'after_quantity' => $newStokTotal,
                     'reason' => "Penerimaan Barang #{$penerimaan->no_terima}" . ($catatanVerifikasi ? " ({$catatanVerifikasi})" : ""),
                     'reference_id' => $penerimaan->id,
                     'reference_type' => PenerimaanBarang::class,
                 ]);
 
                 // Log detailed stock movement (Activity Log)
+                $batchLabel = $detail->batch_number ?? '-';
                 activity()
                     ->performedOn($barang)
                     ->causedBy(auth()->user())
                     ->withProperties([
-                        'old_stok' => $oldStok,
-                        'new_stok' => $newStok,
+                        'old_stok' => $oldStokTotal,
+                        'new_stok' => $newStokTotal,
                         'jumlah_masuk' => $detail->jumlah,
+                        'batch_number' => $detail->batch_number,
+                        'tgl_kadaluarsa' => $detail->tgl_kadaluarsa,
                         'no_terima' => $penerimaan->no_terima,
                         'tipe' => 'masuk',
                     ])
-                    ->log("Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} melalui verifikasi penerimaan {$penerimaan->no_terima}");
+                    ->log("Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} (Batch: {$batchLabel}) melalui verifikasi penerimaan {$penerimaan->no_terima}");
             }
 
             // After commit, send notification to supplier

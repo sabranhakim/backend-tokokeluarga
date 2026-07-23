@@ -15,7 +15,12 @@ new class extends Component {
     public function with()
     {
         $barang = Barang::withoutGlobalScope('active')->with(['kategori', 'supplier'])->findOrFail($this->barangId);
-        
+
+        $barangStoks = \App\Models\BarangStok::where('barang_id', $this->barangId)
+            ->where('stok', '>', 0)
+            ->orderBy('tgl_kadaluarsa', 'asc')
+            ->get();
+
         $recentMovements = StockMovement::where('barang_id', $this->barangId)
             ->with('user')
             ->latest()
@@ -30,6 +35,7 @@ new class extends Component {
 
         return [
             'barang' => $barang,
+            'barangStoks' => $barangStoks,
             'recentMovements' => $recentMovements,
             'stats' => $stats,
         ];
@@ -81,10 +87,6 @@ new class extends Component {
                         <p class="text-slate-800 font-medium">{{ $barang->satuan }}</p>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase">Tanggal Kadaluarsa</p>
-                        <p class="text-slate-800 font-medium">{{ $barang->tgl_kadaluarsa ? $barang->tgl_kadaluarsa->format('d/m/Y') : 'Tidak ada' }}</p>
-                    </div>
-                    <div>
                         <p class="text-xs font-bold text-slate-400 uppercase">Harga Beli</p>
                         <p class="text-lg font-mono font-bold text-slate-600">Rp {{ number_format($barang->harga_beli, 0, ',', '.') }}</p>
                     </div>
@@ -92,6 +94,72 @@ new class extends Component {
                         <p class="text-xs font-bold text-slate-400 uppercase">Harga Jual</p>
                         <p class="text-lg font-mono font-bold text-blue-600">Rp {{ number_format($barang->harga_jual, 0, ',', '.') }}</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Stock per Batch -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h4 class="font-bold text-slate-800 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        Stok per Batch
+                    </h4>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-slate-50/30">
+                                <th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Batch</th>
+                                <th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Stok</th>
+                                <th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kadaluarsa</th>
+                                <th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tanggal Masuk</th>
+                                <th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Harga Beli</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($barangStoks as $stok)
+                            <tr class="hover:bg-slate-50/50">
+                                <td class="px-6 py-4">
+                                    <span class="font-mono text-xs font-bold px-2 py-1 bg-slate-100 text-slate-700 rounded">
+                                        {{ $stok->batch_number ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-right font-bold text-slate-800">
+                                    {{ $stok->stok }}
+                                </td>
+                                <td class="px-6 py-4 text-xs text-slate-600">
+                                    @if($stok->tgl_kadaluarsa)
+                                        @php
+                                            $daysLeft = now()->diffInDays($stok->tgl_kadaluarsa, false);
+                                        @endphp
+                                        <span class="{{ $daysLeft < 30 ? 'text-red-600 font-bold' : 'text-slate-600' }}">
+                                            {{ $stok->tgl_kadaluarsa->format('d/m/Y') }}
+                                            @if($daysLeft < 0)
+                                                (Kadaluarsa)
+                                            @elseif($daysLeft <= 30)
+                                                ({{ $daysLeft }} hari)
+                                            @endif
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-xs text-slate-600">
+                                    {{ $stok->tgl_masuk ? $stok->tgl_masuk->format('d/m/Y') : '-' }}
+                                </td>
+                                <td class="px-6 py-4 text-right text-xs font-mono text-slate-600">
+                                    Rp {{ number_format($stok->harga_beli, 0, ',', '.') }}
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-slate-400 italic text-sm">
+                                    Belum ada stok batch.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

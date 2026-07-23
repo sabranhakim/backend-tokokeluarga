@@ -17,7 +17,7 @@ new class extends Component {
 
     public function with()
     {
-        $query = StockMovement::with(['user', 'barang', 'reference']);
+        $query = StockMovement::with(['user', 'barang', 'reference', 'barangStok']);
         
         if ($this->barangId) {
             $query->where('barang_id', $this->barangId);
@@ -58,6 +58,7 @@ new class extends Component {
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Jumlah</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Sebelum</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Sesudah</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Keterangan</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Petugas</th>
                     </tr>
@@ -102,6 +103,13 @@ new class extends Component {
                         <td class="px-6 py-4 text-center text-slate-900 font-bold font-mono text-sm">
                             {{ $movement->after_quantity }}
                         </td>
+                        <td class="px-6 py-4 text-xs text-slate-600">
+                            @if($movement->barangStok && $movement->barangStok->batch_number)
+                                <span class="font-mono font-bold">{{ $movement->barangStok->batch_number }}</span>
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td class="px-6 py-4 text-sm text-slate-600">
                             {{ $movement->reason ?? '-' }}
                         </td>
@@ -111,7 +119,7 @@ new class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $barangId ? 7 : 8 }}" class="px-6 py-10 text-center">
+                        <td colspan="{{ $barangId ? 8 : 9 }}" class="px-6 py-10 text-center">
                             <p class="text-slate-400 italic text-sm">Belum ada riwayat pergerakan stok.</p>
                         </td>
                     </tr>

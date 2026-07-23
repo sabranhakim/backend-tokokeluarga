@@ -14,6 +14,7 @@ class StockMovement extends Model
 
     protected $fillable = [
         'barang_id',
+        'barang_stok_id',
         'user_id',
         'type',
         'quantity',
@@ -27,6 +28,11 @@ class StockMovement extends Model
     public function barang(): BelongsTo
     {
         return $this->belongsTo(Barang::class);
+    }
+
+    public function barangStok(): BelongsTo
+    {
+        return $this->belongsTo(BarangStok::class);
     }
 
     public function user(): BelongsTo

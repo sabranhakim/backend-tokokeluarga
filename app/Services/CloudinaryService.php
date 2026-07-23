@@ -47,4 +47,25 @@ class CloudinaryService
             return null;
         }
     }
+
+    public function uploadFromPath(string $filePath, string $folder = 'penerimaan_barang'): ?string
+    {
+        if (! file_exists($filePath)) {
+            return null;
+        }
+
+        try {
+            $response = $this->cloudinary->uploadApi()->upload($filePath, [
+                'folder' => $folder,
+                'quality' => 'auto',
+                'fetch_format' => 'auto',
+            ]);
+
+            return $response['secure_url'];
+        } catch (\Exception $e) {
+            \Log::error('Cloudinary Upload Error: '.$e->getMessage());
+
+            return null;
+        }
+    }
 }

@@ -26,7 +26,6 @@ class Barang extends Model
         'harga_jual',
         'stok',
         'stok_minimal',
-        'tgl_kadaluarsa',
     ];
 
     protected static function booted()
@@ -35,10 +34,6 @@ class Barang extends Model
             $builder->where('is_active', true);
         });
     }
-
-    protected $casts = [
-        'tgl_kadaluarsa' => 'date',
-    ];
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -66,5 +61,15 @@ class Barang extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function barangStoks(): HasMany
+    {
+        return $this->hasMany(BarangStok::class);
+    }
+
+    public function getStokTotalAttribute(): int
+    {
+        return $this->barangStoks()->sum('stok');
     }
 }

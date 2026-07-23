@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Barang;
+use App\Models\BarangStok;
 use App\Models\PenerimaanBarang;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +48,9 @@ new class extends Component {
 
     public function getExpiredDataProperty()
     {
-        $query = Barang::with('kategori')
-            ->whereNotNull('tgl_kadaluarsa');
+        $query = BarangStok::with('barang.kategori')
+            ->whereNotNull('tgl_kadaluarsa')
+            ->where('stok', '>', 0);
 
         if ($this->expiredInDays == 'already_expired') {
             $query->where('tgl_kadaluarsa', '<', now()->toDateString());
@@ -271,8 +273,8 @@ new class extends Component {
                 <tbody class="divide-y divide-slate-100">
                     @forelse($this->expiredData as $item)
                         <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-4 font-bold text-slate-800">{{ $item->nama_barang }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-600">{{ $item->kategori->nama_kategori ?? '-' }}</td>
+                            <td class="px-6 py-4 font-bold text-slate-800">{{ $item->barang->nama_barang }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ $item->barang->kategori->nama_kategori ?? '-' }}</td>
                             <td class="px-6 py-4 text-center text-sm font-bold text-slate-700">
                                 {{ $item->tgl_kadaluarsa->format('d M Y') }}
                             </td>
