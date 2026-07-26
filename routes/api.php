@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BarangController;
+use App\Http\Controllers\Api\V1\BarangKeluarController;
 use App\Http\Controllers\Api\V1\KategoriController;
 use App\Http\Controllers\Api\V1\PenerimaanBarangController;
 use App\Http\Controllers\Api\V1\SupplierController;
@@ -60,5 +61,10 @@ Route::prefix('v1')->group(function () {
         Route::post('penerimaan-barang', [PenerimaanBarangController::class, 'store'])->middleware('can:create penerimaan');
         Route::post('penerimaan-barang/{id}/verify', [PenerimaanBarangController::class, 'verify'])->middleware('can:verify penerimaan');
         Route::post('penerimaan-barang/{id}/reject', [PenerimaanBarangController::class, 'reject'])->middleware('can:verify penerimaan');
+
+        // Barang Keluar API with permissions
+        Route::get('barang-keluar', [BarangKeluarController::class, 'index'])->middleware('can:view barang_keluar');
+        Route::get('barang-keluar/{id}', [BarangKeluarController::class, 'show'])->middleware('can:view barang_keluar');
+        Route::post('barang-keluar', [BarangKeluarController::class, 'store'])->middleware('can:create barang_keluar');
     });
 });

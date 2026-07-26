@@ -11,11 +11,13 @@ new class extends Component {
     public $search = '';
     public $filterBarang = '';
     public $filterExpiry = '';
+    public $filterStok = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
         'filterBarang' => ['except' => ''],
         'filterExpiry' => ['except' => ''],
+        'filterStok' => ['except' => ''],
     ];
 
     public function updatingSearch()
@@ -33,10 +35,20 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function updatingFilterStok()
+    {
+        $this->resetPage();
+    }
+
     public function with()
     {
-        $query = BarangStok::with(['barang.kategori', 'penerimaanBarang'])
-            ->where('stok', '>', 0);
+        $query = BarangStok::with(['barang.kategori', 'penerimaanBarang']);
+
+        if ($this->filterStok === 'tersedia') {
+            $query->where('stok', '>', 0);
+        } elseif ($this->filterStok === 'habis') {
+            $query->where('stok', '=', 0);
+        }
 
         if ($this->search) {
             $search = $this->search;
@@ -110,6 +122,12 @@ new class extends Component {
             <option value="soon">Akan Kadaluarsa (30 hari)</option>
             <option value="safe">Aman</option>
         </select>
+
+        <select wire:model.live="filterStok" class="px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-white">
+            <option value="">Semua Stok</option>
+            <option value="tersedia">Tersedia</option>
+            <option value="habis">Habis</option>
+        </select>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -154,8 +172,15 @@ new class extends Component {
                             <div class="text-[10px] text-slate-400 uppercase font-bold">{{ $stok->barang->kode_barang ?? '' }}</div>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <span class="font-black text-slate-800">{{ number_format($stok->stok, 0) }}</span>
-                            <span class="text-xs text-slate-400 ml-1">{{ $stok->barang->satuan ?? '' }}</span>
+                            @if($stok->stok > 0)
+                                <span class="font-black text-slate-800">{{ number_format($stok->stok, 0) }}</span>
+                                <span class="text-xs text-slate-400 ml-1">{{ $stok->barang->satuan ?? '' }}</span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    Habis
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-center">
                             @if($stok->tgl_kadaluarsa)
