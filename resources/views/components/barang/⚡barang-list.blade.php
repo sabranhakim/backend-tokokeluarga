@@ -23,7 +23,7 @@ new class extends Component {
 
     // Form fields
     public $barangId;
-    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10;
+    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $isi = 1, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10;
 
     protected $rules = [
         'kode_barang' => 'required|unique:barangs,kode_barang',
@@ -31,6 +31,7 @@ new class extends Component {
         'kategori_id' => 'required|exists:kategoris,id',
         'supplier_id' => 'nullable|exists:suppliers,id',
         'satuan' => 'required',
+        'isi' => 'required|integer|min:1',
         'harga_beli' => 'required|numeric|min:0',
         'harga_jual' => 'required|numeric|min:0',
         'stok_minimal' => 'required|numeric|min:0',
@@ -143,6 +144,7 @@ new class extends Component {
         $this->kategori_id = '';
         $this->supplier_id = '';
         $this->satuan = '';
+        $this->isi = 1;
         $this->harga_beli = 0;
         $this->harga_jual = 0;
         $this->stok = 0;
@@ -163,6 +165,7 @@ new class extends Component {
         $this->kategori_id = $barang->kategori_id;
         $this->supplier_id = $barang->supplier_id;
         $this->satuan = $barang->satuan;
+        $this->isi = $barang->isi ?? 1;
         $this->harga_beli = $barang->harga_beli;
         $this->harga_jual = $barang->harga_jual;
         $this->stok = $barang->stok;
@@ -304,7 +307,7 @@ new class extends Component {
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium {{ $barang->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $barang->nama_barang }}</div>
-                            <div class="text-xs text-slate-500">{{ $barang->satuan }}</div>
+                            <div class="text-xs text-slate-500">{{ $barang->satuan }} @if($barang->isi > 1)({{ $barang->isi }} pcs/{{ $barang->satuan }})@endif</div>
                         </td>
                         <td class="px-6 py-4">
                             <span class="text-sm text-slate-600">{{ $barang->supplier->nama_supplier ?? '-' }}</span>
@@ -450,6 +453,21 @@ new class extends Component {
                         <label class="block text-sm font-bold text-slate-700">Satuan</label>
                         <input wire:model="satuan" type="text" placeholder="Contoh: Pcs, Box, Kg" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('satuan') border-red-500 @enderror">
                         @error('satuan') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Isi per Kemasan -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-bold text-slate-700">Isi per {{ $satuan ?: 'Kemasan' }} (pcs)</label>
+                        <div class="relative">
+                            <input wire:model="isi" type="number" min="1" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('isi') border-red-500 @enderror">
+                            <div class="mt-1 text-xs text-slate-400">
+                                Jumlah pcs dalam 1 {{ $satuan ?: 'kemasan' }}
+                                @if($isi > 1)
+                                <span class="text-blue-600 font-medium">→ 1 {{ $satuan ?: 'kemasan' }} = {{ $isi }} pcs</span>
+                                @endif
+                            </div>
+                        </div>
+                        @error('isi') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Stok (read-only, dikelola via penerimaan) -->

@@ -1,35 +1,25 @@
 <?php
 
 use Livewire\Component;
-use Livewire\WithFileUploads;
-use App\Jobs\ProcessPenerimaanFotoJob;
-use App\Models\Supplier;
 use App\Models\Barang;
-use App\Services\PenerimaanBarangService;
-use Illuminate\Support\Facades\DB;
+use App\Models\BarangStok;
+use App\Services\BarangKeluarService;
 use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
-    use WithFileUploads;
-
-    public $no_terima;
-    public $supplier_id;
-    public $tgl_terima;
-    public $foto_bon;
+    public $tgl_keluar;
+    public $keterangan;
 
     public $items = [];
     public $showPreview = false;
 
     protected $rules = [
-        'no_terima' => 'nullable|string',
-        'supplier_id' => 'required|exists:suppliers,id',
-        'tgl_terima' => 'required|date',
-        'foto_bon' => 'nullable|image|max:5120',
+        'tgl_keluar' => 'required|date',
+        'keterangan' => 'nullable|string|max:1000',
         'items' => 'required|array|min:1',
         'items.*.barang_id' => 'required|exists:barangs,id|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
-        'items.*.batch_number' => 'nullable|string|max:100',
-        'items.*.tgl_kadaluarsa' => 'nullable|date',
+        'items.*.satuan_mode' => 'nullable|in:pcs,satuan',
     ];
 
     protected $messages = [
@@ -38,12 +28,11 @@ new class extends Component {
 
     public function mount()
     {
-        if (!Gate::allows('create penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
-            session()->flash('error', 'Anda tidak memiliki hak akses untuk menambah penerimaan.');
+        if (!Gate::allows('create barang_keluar') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses untuk menambah barang keluar.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
-        $this->tgl_terima = date('Y-m-d');
-        $this->no_terima = 'Otomatis (dibuat oleh sistem)';
+        $this->tgl_keluar = date('Y-m-d');
         $this->addItem();
     }
 
@@ -52,21 +41,8 @@ new class extends Component {
         $this->items[] = [
             'barang_id' => '',
             'jumlah' => 1,
-            'batch_number' => '',
-            'tgl_kadaluarsa' => '',
+            'satuan_mode' => 'pcs',
         ];
-    }
-
-    public function generateBatchNumber($index, $barangId)
-    {
-        if (!isset($this->items[$index])) return;
-
-        $barang = Barang::find($barangId);
-        if (!$barang) return;
-
-        if (empty($this->items[$index]['batch_number'])) {
-            $this->items[$index]['batch_number'] = 'BATCH-' . $barang->kode_barang . '-' . now()->format('Ymd');
-        }
     }
 
     public function removeItem($index)
@@ -86,30 +62,19 @@ new class extends Component {
         $this->showPreview = false;
     }
 
-    public function save(PenerimaanBarangService $service)
+    public function save(BarangKeluarService $service)
     {
-        if (!Gate::allows('create penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
+        if (!Gate::allows('create barang_keluar') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
             return;
         }
         $validated = $this->validate();
 
         try {
-            $penerimaan = $service->store($validated);
+            $service->store($validated);
 
-            if ($this->foto_bon) {
-                $ext = $this->foto_bon->getClientOriginalExtension();
-                $tempPath = sys_get_temp_dir() . '/penerimaan_foto_' . $penerimaan->id . '_' . time() . '.' . $ext;
-                copy($this->foto_bon->getRealPath(), $tempPath);
-
-                ProcessPenerimaanFotoJob::dispatch($penerimaan->id, $tempPath);
-            }
-
-            $msg = $this->foto_bon
-                ? 'Penerimaan barang berhasil disimpan. Foto sedang diproses di background.'
-                : 'Penerimaan barang berhasil disimpan.';
-            session()->flash('success', $msg);
-            return redirect()->route('penerimaan.index');
+            session()->flash('success', 'Barang keluar berhasil disimpan dan stok telah diperbarui.');
+            return redirect()->route('barang-keluar.index');
         } catch (\Exception $e) {
             $this->showPreview = false;
             $this->addError('general', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -119,16 +84,22 @@ new class extends Component {
     public function with()
     {
         return [
-            'suppliers' => Supplier::all(),
             'barangs' => Barang::all(),
         ];
+    }
+
+    public function getStokTersedia($barangId)
+    {
+        if (!$barangId) return 0;
+        $barang = Barang::find($barangId);
+        return $barang ? $barang->stok : 0;
     }
 };
 ?>
 
 <div class="p-6">
     <div class="mb-6">
-        <a href="{{ route('penerimaan.index') }}" class="text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors">
+        <a href="{{ route('barang-keluar.index') }}" class="text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors">
             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Kembali ke Daftar
         </a>
@@ -138,21 +109,15 @@ new class extends Component {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Informasi Penerimaan</h3>
+                    <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Informasi Barang Keluar</h3>
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1">No. Terima</label>
-                            <input wire:model="no_terima" type="text" readonly disabled class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed outline-none transition-all @error('no_terima') border-red-500 @enderror">
-                            @error('no_terima') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Tanggal Terima</label>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Tanggal Keluar</label>
                             <div class="relative group"
                                  wire:ignore
                                  x-data="{
-                                    value: @entangle('tgl_terima'),
+                                    value: @entangle('tgl_keluar'),
                                     instance: null,
                                     init() {
                                         this.instance = flatpickr($refs.input, {
@@ -177,87 +142,17 @@ new class extends Component {
                                 <input x-ref="input"
                                        type="text"
                                        readonly
-                                       class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white cursor-pointer @error('tgl_terima') border-red-500 @enderror"
+                                       class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white cursor-pointer @error('tgl_keluar') border-red-500 @enderror"
                                        placeholder="Pilih Tanggal">
                             </div>
-                            @error('tgl_terima') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                            @error('tgl_keluar') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Supplier</label>
-                            <div wire:ignore x-data="{
-                                value: @entangle('supplier_id'),
-                                ts: null,
-                                init() {
-                                    this.ts = new TomSelect($refs.select, {
-                                        onChange: (val) => { this.value = val }
-                                    });
-                                    this.$watch('value', (val) => {
-                                        if (val !== this.ts.getValue()) {
-                                            this.ts.setValue(val);
-                                        }
-                                    });
-                                }
-                            }">
-                                <select x-ref="select" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('supplier_id') border-red-500 @enderror">
-                                    <option value="">Pilih Supplier</option>
-                                    @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @error('supplier_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Keterangan (Opsional)</label>
+                            <textarea wire:model="keterangan" rows="3" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none" placeholder="Catatan keperluan barang keluar..."></textarea>
+                            @error('keterangan') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                         </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-6 border-b border-slate-50 pb-2">Dokumentasi</h3>
-
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Foto Bon (Opsional)</label>
-
-                        <div
-                            x-data="{ isUploading: false, progress: 0 }"
-                            x-on:livewire-upload-start="isUploading = true"
-                            x-on:livewire-upload-finish="isUploading = false"
-                            x-on:livewire-upload-error="isUploading = false"
-                            x-on:livewire-upload-progress="progress = $event.detail.progress"
-                        >
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-blue-400 transition-colors cursor-pointer relative bg-white">
-                                <input type="file" wire:model="foto_bon" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-10 w-10 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <div class="flex text-sm text-slate-600">
-                                        <span class="relative cursor-pointer bg-white rounded-md font-bold text-blue-600 hover:text-blue-500">Upload file</span>
-                                    </div>
-                                    <p class="text-xs text-slate-500">PNG, JPG up to 5MB</p>
-                                </div>
-                            </div>
-
-                            <div x-show="isUploading" class="mt-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sedang Mengunggah...</span>
-                                    <span class="text-[10px] font-black text-blue-600" x-text="progress + '%'"></span>
-                                </div>
-                                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-50">
-                                    <div class="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out" :style="'width: ' + progress + '%'"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        @if ($foto_bon)
-                            <div class="mt-4 relative inline-block group">
-                                <div class="absolute inset-0 bg-slate-900/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <img src="{{ $foto_bon->temporaryUrl() }}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-100">
-                                <button type="button" wire:click="$set('foto_bon', null)" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg hover:bg-rose-600 transition-colors">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
-                            </div>
-                        @endif
-                        @error('foto_bon') <span class="text-red-500 text-xs font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
                 </div>
             </div>
@@ -274,11 +169,11 @@ new class extends Component {
 
                     <div class="p-6">
                         <div class="space-y-4">
-                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1])->toJson(); @endphp
+                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1, 'stok' => $b->stok])->toJson(); @endphp
                             @foreach($items as $index => $item)
                             <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                <div class="md:col-span-5">
+                                <div class="md:col-span-6">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cari SKU / Nama Barang</label>
                                     <div wire:key="search-{{ $index }}" x-data="{
                                         search: '',
@@ -296,14 +191,15 @@ new class extends Component {
                                         },
                                         select(barang) {
                                             this.selectedId = barang.id;
-                                            this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang + ' (' + barang.satuan + ')' + (barang.isi > 1 ? ' - ' + barang.isi + ' pcs/' + barang.satuan : '');
+                                            const isiText = barang.isi > 1 ? ' (' + barang.isi + ' ' + barang.satuan + '/pcs)' : '';
+                                            this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang + ' (Stok: ' + barang.stok + ')' + isiText;
                                             this.search = '';
                                             this.open = false;
                                         },
                                         init() {
                                             if (this.selectedId) {
                                                 const found = this.barangs.find(b => b.id === this.selectedId);
-                                                if (found) this.selectedLabel = found.kode_barang + ' - ' + found.nama_barang;
+                                                if (found) this.selectedLabel = found.kode_barang + ' - ' + found.nama_barang + ' (Stok: ' + found.stok + ')';
                                             }
                                         }
                                     }" class="relative">
@@ -324,9 +220,9 @@ new class extends Component {
                                              class="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
                                             <template x-for="barang in filtered" :key="barang.id">
                                                 <div @click="select(barang)"
-                                                     class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors">
+                                                      class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors">
                                                     <div class="text-sm font-bold text-slate-800" x-text="barang.kode_barang"></div>
-                                                    <div class="text-xs text-slate-500" x-text="barang.nama_barang + ' (' + barang.satuan + ')' + (barang.isi > 1 ? ' - ' + barang.isi + ' pcs/' + barang.satuan : '')"></div>
+                                                    <div class="text-xs text-slate-500" x-text="barang.nama_barang + ' (' + barang.satuan + ')' + (barang.isi > 1 ? ' - ' + barang.isi + ' ' + barang.satuan + '/pcs' : '') + ' - Stok: ' + barang.stok"></div>
                                                 </div>
                                             </template>
                                         </div>
@@ -338,39 +234,83 @@ new class extends Component {
                                     </div>
                                     @error("items.$index.barang_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="md:col-span-2">
-                                    @php
-                                        $barangTerpilih = $barangs->firstWhere('id', $item['barang_id'] ?? '');
-                                        $isiItem = $barangTerpilih?->isi ?? 1;
-                                        $satuanItem = $barangTerpilih?->satuan ?? 'pcs';
-                                    @endphp
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah ({{ $satuanItem }})</label>
-                                    <input wire:model.live="items.{{ $index }}.jumlah" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                    @if($barangTerpilih)
-                                        <div class="mt-1 text-xs text-slate-400">
-                                            @if($isiItem > 1 && $item['jumlah'] >= $isiItem)
-                                                <span class="text-blue-600 font-medium">
-                                                    = {{ intdiv((int)$item['jumlah'], $isiItem) }} {{ $satuanItem }}
-                                                    @if((int)$item['jumlah'] % $isiItem > 0)
-                                                        + {{ (int)$item['jumlah'] % $isiItem }} pcs
-                                                    @endif
-                                                </span>
-                                            @elseif($isiItem > 1)
-                                                <span class="text-slate-400">1 {{ $satuanItem }} = {{ $isiItem }} pcs</span>
-                                            @endif
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                        Jumlah
+                                        <template x-if="selectedId">
+                                            <span x-text="'(' + (barangs.find(b => b.id === selectedId)?.satuan || 'pcs') + ')'"></span>
+                                        </template>
+                                    </label>
+                                    <div class="flex gap-2" x-data="{ mode: 'pcs', isi: 1, kemasan: 0, sisaPcs: 0 }"
+                                         x-init="
+                                            mode = @entangle('items.' + $el.closest('[wire\\:key]').getAttribute('wire:key').replace('item-', '') + '.satuan_mode');
+                                            $watch('selectedId', (id) => {
+                                                const b = barangs.find(x => x.id === id);
+                                                if (b) { isi = b.isi; kemasan = 0; sisaPcs = 0; }
+                                            });
+                                            $watch('kemasan', (val) => updateJumlah());
+                                            $watch('sisaPcs', (val) => updateJumlah());
+                                         "
+                                         x-init="
+                                            const idx = $el.closest('[wire\\:key]').getAttribute('wire:key').replace('item-', '');
+                                            mode = @entangle('items.' + idx + '.satuan_mode');
+                                            $watch('selectedId', (id) => {
+                                                const b = barangs.find(x => x.id === id);
+                                                if (b) { isi = b.isi; kemasan = 0; sisaPcs = 0; }
+                                            });
+                                            function updateJumlah() {
+                                                const total = kemasan * isi + sisaPcs;
+                                                document.querySelector('input[wire\\:model=\"items.' + idx + '.jumlah\"]').value = Math.max(total, 1);
+                                                document.querySelector('input[wire\\:model=\"items.' + idx + '.jumlah\"]').dispatchEvent(new Event('input', { bubbles: true }));
+                                            }
+                                         ">
+                                        <div class="flex rounded-lg border border-slate-200 overflow-hidden shrink-0">
+                                            <button type="button" @click="mode = 'pcs'; kemasan = 0; sisaPcs = 0; updateJumlah()"
+                                                    :class="mode === 'pcs' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'"
+                                                    class="px-3 py-2 text-xs font-bold transition-colors">Pcs</button>
+                                            <button type="button" @click="mode = 'satuan'; kemasan = 1; sisaPcs = 0"
+                                                    :class="mode === 'satuan' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'"
+                                                    class="px-3 py-2 text-xs font-bold transition-colors"
+                                                    x-text="barangs.find(b => b.id === selectedId)?.satuan || 'Satuan'"></button>
                                         </div>
-                                    @endif
+                                        <div class="flex-1">
+                                            <template x-if="mode === 'pcs'">
+                                                <input wire:model="items.{{ $index }}.jumlah" type="number" min="1"
+                                                       class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                            </template>
+                                            <template x-if="mode === 'satuan'">
+                                                <div class="flex items-center gap-1">
+                                                    <input x-model.number="kemasan" type="number" min="0"
+                                                           class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                                                           :placeholder="barangs.find(b => b.id === selectedId)?.satuan || 'Box'">
+                                                    <span class="text-xs text-slate-400 font-bold">+</span>
+                                                    <input x-model.number="sisaPcs" type="number" min="0"
+                                                           class="w-16 px-2 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-center"
+                                                           placeholder="pcs">
+                                                    <span class="text-xs text-slate-400 whitespace-nowrap" x-show="selectedId"
+                                                          x-text="'= ' + (kemasan * isi + sisaPcs) + ' pcs'"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <template x-if="selectedId">
+                                        <div class="text-xs text-slate-400 mt-1">
+                                            <span x-text="'1 ' + (barangs.find(b => b.id === selectedId)?.satuan || '') + ' = ' + (barangs.find(b => b.id === selectedId)?.isi || 1) + ' pcs'"></span>
+                                        </div>
+                                    </template>
                                     @error("items.$index.jumlah") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Batch</label>
-                                    <input wire:model="items.{{ $index }}.batch_number" type="text" placeholder="Opsional" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                    @error("items.$index.batch_number") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tgl. Kadaluarsa</label>
-                                    <input wire:model="items.{{ $index }}.tgl_kadaluarsa" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                    @error("items.$index.tgl_kadaluarsa") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Stok Tersedia</label>
+                                    <div class="px-4 py-2 rounded-lg border border-slate-200 bg-slate-100 text-slate-700 text-sm font-bold">
+                                        @php
+                                            $stokTersedia = 0;
+                                            if ($item['barang_id']) {
+                                                $b = \App\Models\Barang::find($item['barang_id']);
+                                                $stokTersedia = $b ? $b->stok : 0;
+                                            }
+                                        @endphp
+                                        {{ $stokTersedia }}
+                                    </div>
                                 </div>
                                 <div class="md:col-span-1 flex justify-center">
                                     @if(count($items) > 1)
@@ -396,7 +336,7 @@ new class extends Component {
 
                             <span wire:loading.remove wire:target="save" class="flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                                Simpan Penerimaan
+                                Simpan Barang Keluar
                             </span>
 
                             <span wire:loading wire:target="save" class="flex items-center">
@@ -419,7 +359,7 @@ new class extends Component {
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="text-lg font-black text-slate-800 flex items-center">
                     <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2m-6 9l2 2 4-4"/></svg>
-                    Konfirmasi & Ringkasan Penerimaan
+                    Konfirmasi & Ringkasan Barang Keluar
                 </h3>
                 <button type="button" wire:click="closePreview" class="text-slate-400 hover:text-slate-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -430,35 +370,15 @@ new class extends Component {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-4">
                         <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nomor Terima</p>
-                            <p class="text-sm font-mono font-bold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 inline-block mt-1">{{ $no_terima }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Supplier</p>
-                            <p class="text-sm font-bold text-slate-900 mt-1">
-                                {{ \App\Models\Supplier::find($supplier_id)?->nama_supplier ?? '-' }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal Terima</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal Keluar</p>
                             <p class="text-sm font-medium text-slate-900 mt-1">
-                                {{ $tgl_terima ? date('d F Y', strtotime($tgl_terima)) : '-' }}
+                                {{ $tgl_keluar ? date('d F Y', strtotime($tgl_keluar)) : '-' }}
                             </p>
                         </div>
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Foto Bon</p>
-                        @if($foto_bon)
-                            <div class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 h-32 w-full max-w-[200px] shadow-inner flex items-center justify-center">
-                                <img src="{{ $foto_bon->temporaryUrl() }}" class="h-full w-full object-cover">
-                            </div>
-                        @else
-                            <div class="rounded-xl border border-slate-200 border-dashed bg-slate-50/50 h-32 w-full max-w-[200px] flex flex-col items-center justify-center text-slate-400 text-xs">
-                                <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                Tidak ada foto
-                            </div>
-                        @endif
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Keterangan</p>
+                            <p class="text-sm font-medium text-slate-700 mt-1">{{ $keterangan ?: 'Tidak ada keterangan' }}</p>
+                        </div>
                     </div>
                 </div>
 
@@ -470,8 +390,6 @@ new class extends Component {
                         <thead>
                             <tr class="bg-slate-50/20 text-slate-400 text-[10px] font-black uppercase tracking-wider border-b border-slate-100">
                                 <th class="px-4 py-2">Barang</th>
-                                <th class="px-4 py-2">Batch</th>
-                                <th class="px-4 py-2">Kadaluarsa</th>
                                 <th class="px-4 py-2 text-right">Jumlah</th>
                             </tr>
                         </thead>
@@ -488,23 +406,17 @@ new class extends Component {
                                             <div class="font-bold text-slate-800">{{ $barangObj?->nama_barang }}</div>
                                             <div class="font-mono text-[10px] text-slate-400">{{ $barangObj?->kode_barang }}</div>
                                         </td>
-                                        <td class="px-4 py-2.5">
-                                            <span class="font-mono text-slate-600">{{ $item['batch_number'] ?: '-' }}</span>
-                                        </td>
-                                        <td class="px-4 py-2.5">
-                                            <span class="text-slate-600">{{ $item['tgl_kadaluarsa'] ?: '-' }}</span>
-                                        </td>
                                         <td class="px-4 py-2.5 text-right font-bold text-slate-900">
-                                            <div>{{ $item['jumlah'] }} {{ $barangObj?->satuan ?? 'pcs' }}</div>
+                                            <div>{{ $item['jumlah'] }} pcs</div>
                                             @php
-                                                $isiP = $barangObj?->isi ?? 1;
-                                                $satuanP = $barangObj?->satuan;
+                                                $isiItem = $barangObj?->isi ?? 1;
+                                                $satuanItem = $barangObj?->satuan;
                                             @endphp
-                                            @if($isiP > 1 && $item['jumlah'] >= $isiP)
+                                            @if($isiItem > 1 && $item['jumlah'] >= $isiItem)
                                                 <div class="text-[10px] text-slate-400">
-                                                    {{ intdiv((int)$item['jumlah'], $isiP) }} {{ $satuanP }}
-                                                    @if((int)$item['jumlah'] % $isiP > 0)
-                                                        + {{ (int)$item['jumlah'] % $isiP }} pcs
+                                                    {{ floor($item['jumlah'] / $isiItem) }} {{ $satuanItem }}
+                                                    @if($item['jumlah'] % $isiItem > 0)
+                                                        + {{ $item['jumlah'] % $isiItem }} pcs
                                                     @endif
                                                 </div>
                                             @endif
@@ -515,7 +427,7 @@ new class extends Component {
                         </tbody>
                         <tfoot class="bg-slate-50/50 text-xs font-bold border-t border-slate-100">
                             <tr>
-                                <td colspan="3" class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
+                                <td class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
                                 <td class="px-4 py-3 text-right text-slate-950 font-black">{{ $totalQty }}</td>
                             </tr>
                         </tfoot>

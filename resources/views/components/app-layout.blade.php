@@ -204,6 +204,14 @@
                     <span class="ml-3">Penerimaan Barang</span>
                 </a>
 
+                <a href="{{ route('barang-keluar.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('barang-keluar.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('barang-keluar.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    </div>
+                    <span class="ml-3">Barang Keluar</span>
+                </a>
+
                 <a href="{{ route('laporan.index') }}" 
                    class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('laporan.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
                     <div class="p-2 rounded-lg {{ request()->routeIs('laporan.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">

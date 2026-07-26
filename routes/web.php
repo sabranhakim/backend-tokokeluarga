@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\BarangController;
+use App\Http\Controllers\Web\BarangKeluarController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\KategoriController;
 use App\Http\Controllers\Web\PenerimaanBarangController;
@@ -34,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/supplier', [SupplierController::class, 'trash'])->name('supplier.index');
         Route::get('/kategori', [KategoriController::class, 'trash'])->name('kategori.index');
         Route::get('/penerimaan', [PenerimaanBarangController::class, 'trash'])->name('penerimaan.index');
+        Route::get('/barang-keluar', [BarangKeluarController::class, 'trash'])->name('barang-keluar.index');
         Route::get('/users', function () {
             return view('users.trash');
         })->name('user.index');
@@ -49,6 +51,9 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/penerimaan/{id}/restore', [PenerimaanBarangController::class, 'restore'])->name('penerimaan.restore');
         Route::delete('/penerimaan/{id}/force-delete', [PenerimaanBarangController::class, 'forceDelete'])->name('penerimaan.force-delete');
+
+        Route::post('/barang-keluar/{id}/restore', [BarangKeluarController::class, 'restore'])->name('barang-keluar.restore');
+        Route::delete('/barang-keluar/{id}/force-delete', [BarangKeluarController::class, 'forceDelete'])->name('barang-keluar.force-delete');
     });
 
     // Barang Stok Routes
@@ -79,6 +84,14 @@ Route::middleware('auth')->group(function () {
         Route::patch('/{penerimaanBarang}/verify', [PenerimaanBarangController::class, 'verify'])->name('verify');
         Route::post('/{penerimaanBarang}/reject', [PenerimaanBarangController::class, 'reject'])->name('reject');
         Route::delete('/{penerimaanBarang}', [PenerimaanBarangController::class, 'destroy'])->name('destroy');
+    });
+
+    // Barang Keluar Routes
+    Route::prefix('barang-keluar')->name('barang-keluar.')->group(function () {
+        Route::get('/', [BarangKeluarController::class, 'index'])->name('index');
+        Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
+        Route::get('/{barangKeluar}', [BarangKeluarController::class, 'show'])->name('show');
+        Route::delete('/{barangKeluar}', [BarangKeluarController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('activity', function () {
