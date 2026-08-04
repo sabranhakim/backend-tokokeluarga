@@ -1,11 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        Detail Barang Keluar #{{ $barangKeluar->no_keluar }}
+        Detail Retur Pembelian #{{ $returPembelian->no_retur }}
     </x-slot>
 
     <div class="p-6">
         <div class="mb-6 flex justify-between items-center">
-            <a href="{{ route('barang-keluar.index') }}" class="text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors">
+            <a href="{{ route('retur-pembelian.index') }}" class="text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Kembali ke Daftar
             </a>
@@ -17,26 +17,26 @@
                     <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-50 pb-2">Informasi Umum</h3>
                     <div class="space-y-4">
                         <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">No. Keluar</p>
-                            <p class="text-sm font-mono font-bold text-slate-900">{{ $barangKeluar->no_keluar }}</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">No. Retur</p>
+                            <p class="text-sm font-mono font-bold text-slate-900">{{ $returPembelian->no_retur }}</p>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal Keluar</p>
-                            <p class="text-sm font-medium text-slate-900">{{ $barangKeluar->tgl_keluar->format('d F Y') }}</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal Retur</p>
+                            <p class="text-sm font-medium text-slate-900">{{ $returPembelian->tgl_retur->format('d F Y') }}</p>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jenis Keluar</p>
-                            <p class="text-sm font-medium text-slate-900">{{ $barangKeluar->jenis_keluar_label }}</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Supplier</p>
+                            <p class="text-sm font-medium text-slate-900">{{ $returPembelian->supplier->nama_supplier ?? '-' }}</p>
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Petugas</p>
-                            <p class="text-sm font-medium text-slate-900">{{ $barangKeluar->user->name }}</p>
+                            <p class="text-sm font-medium text-slate-900">{{ $returPembelian->user->name }}</p>
                         </div>
-                        @if($barangKeluar->keterangan)
+                        @if($returPembelian->keterangan)
                         <div>
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Keterangan</p>
                             <p class="text-sm font-medium text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1">
-                                {{ $barangKeluar->keterangan }}
+                                {{ $returPembelian->keterangan }}
                             </p>
                         </div>
                         @endif
@@ -47,7 +47,7 @@
             <div class="md:col-span-2">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                        <h3 class="text-lg font-bold text-slate-800">Daftar Barang Keluar</h3>
+                        <h3 class="text-lg font-bold text-slate-800">Daftar Barang Retur</h3>
                     </div>
                     <table class="w-full text-left">
                         <thead>
@@ -59,7 +59,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @php
-                                $groupedDetails = $barangKeluar->detailBarangKeluars->groupBy('barang_id');
+                                $groupedDetails = $returPembelian->detailReturPembelians->groupBy('barang_id');
                                 $grandTotal = 0;
                             @endphp
                             @foreach($groupedDetails as $barangId => $details)
@@ -67,8 +67,6 @@
                                 $barang = $details->first()->barang;
                                 $totalJumlah = $details->sum('jumlah');
                                 $grandTotal += $totalJumlah;
-                                $isi = $barang->isi ?? 1;
-                                $satuan = $barang->satuan;
                             @endphp
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-6 py-4">
@@ -76,7 +74,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-medium text-slate-900">{{ $barang->nama_barang }}</div>
-                                    <div class="text-xs text-slate-500">{{ $satuan }}</div>
+                                    <div class="text-xs text-slate-500">{{ $barang->satuan }}</div>
                                     @if($details->count() > 1)
                                     <div class="mt-1 space-y-0.5">
                                         @foreach($details as $d)
@@ -86,19 +84,9 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex flex-col items-end">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700">
-                                            {{ $totalJumlah }}
-                                        </span>
-                                        @if($isi > 1 && $totalJumlah >= $isi)
-                                            <span class="text-xs text-slate-400 mt-1">
-                                                {{ intdiv($totalJumlah, $isi) }} {{ $satuan }}
-                                                @if($totalJumlah % $isi > 0)
-                                                    + {{ $totalJumlah % $isi }} pcs
-                                                @endif
-                                            </span>
-                                        @endif
-                                    </div>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700">
+                                        {{ $totalJumlah }}
+                                    </span>
                                 </td>
                             </tr>
                             @endforeach

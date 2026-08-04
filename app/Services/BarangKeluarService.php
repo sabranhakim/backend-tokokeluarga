@@ -4,14 +4,19 @@ namespace App\Services;
 
 use App\Models\Barang;
 use App\Models\BarangKeluar;
-use App\Models\BarangStok;
 use App\Models\DetailBarangKeluar;
-use App\Models\StockMovement;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class BarangKeluarService
 {
+    protected $stockHelper;
+
+    public function __construct(StockHelperService $stockHelper)
+    {
+        $this->stockHelper = $stockHelper;
+    }
+
     public function store(array $data): BarangKeluar
     {
         return DB::transaction(function () use ($data) {
@@ -21,64 +26,31 @@ class BarangKeluarService
                 'no_keluar' => $noKeluar,
                 'user_id' => auth()->id(),
                 'tgl_keluar' => $data['tgl_keluar'],
+                'jenis_keluar' => $data['jenis_keluar'] ?? 'penjualan',
                 'keterangan' => $data['keterangan'] ?? null,
             ]);
 
+            $reason = "Barang Keluar #{$barangKeluar->no_keluar} ({$barangKeluar->jenis_keluar_label})".($data['keterangan'] ? " - {$data['keterangan']}" : '');
+
             foreach ($data['items'] as $item) {
-                $barang = Barang::where('id', $item['barang_id'])->lockForUpdate()->firstOrFail();
+                $barang = Barang::findOrFail($item['barang_id']);
 
-                $sisaKurang = $item['jumlah'];
-
-                $batches = BarangStok::where('barang_id', $barang->id)
-                    ->where('stok', '>', 0)
-                    ->orderBy('tgl_kadaluarsa', 'asc')
-                    ->orderBy('tgl_masuk', 'asc')
-                    ->get();
-
-                if ($batches->isEmpty()) {
-                    throw new \Exception("Stok barang '{$barang->nama_barang}' tidak tersedia.");
-                }
-
-                $totalTersedia = $batches->sum('stok');
-                if ($sisaKurang > $totalTersedia) {
-                    throw new \Exception("Stok barang '{$barang->nama_barang}' tidak mencukupi. Tersedia: {$totalTersedia}, diminta: {$sisaKurang}");
-                }
-
-                $totalDiambil = 0;
-
-                foreach ($batches as $batch) {
-                    if ($sisaKurang <= 0) {
-                        break;
+                $totalDiambil = $this->stockHelper->reduce(
+                    $barang,
+                    (int) $item['jumlah'],
+                    $reason,
+                    auth()->id(),
+                    $barangKeluar,
+                    'out',
+                    function ($batch, $ambil) use ($barangKeluar, $item) {
+                        DetailBarangKeluar::create([
+                            'barang_keluar_id' => $barangKeluar->id,
+                            'barang_id' => $item['barang_id'],
+                            'barang_stok_id' => $batch->id,
+                            'jumlah' => $ambil,
+                        ]);
                     }
-
-                    $ambilDariBatch = min($batch->stok, $sisaKurang);
-                    $stokSebelum = $batch->stok;
-                    $batch->decrement('stok', $ambilDariBatch);
-                    $sisaKurang -= $ambilDariBatch;
-                    $totalDiambil += $ambilDariBatch;
-
-                    DetailBarangKeluar::create([
-                        'barang_keluar_id' => $barangKeluar->id,
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $batch->id,
-                        'jumlah' => $ambilDariBatch,
-                    ]);
-
-                    StockMovement::create([
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $batch->id,
-                        'user_id' => auth()->id(),
-                        'type' => 'out',
-                        'quantity' => $ambilDariBatch,
-                        'before_quantity' => $stokSebelum,
-                        'after_quantity' => $stokSebelum - $ambilDariBatch,
-                        'reason' => "Barang Keluar #{$barangKeluar->no_keluar}" . ($data['keterangan'] ? " ({$data['keterangan']})" : ""),
-                        'reference_id' => $barangKeluar->id,
-                        'reference_type' => BarangKeluar::class,
-                    ]);
-                }
-
-                $barang->decrement('stok', $totalDiambil);
+                );
 
                 $konversi = '';
                 if ($barang->isi && $barang->isi > 1) {
@@ -86,7 +58,7 @@ class BarangKeluarService
                     $sisaPcs = $totalDiambil % $barang->isi;
                     if ($kemasan > 0) {
                         $konversi = " ({$kemasan} {$barang->satuan}";
-                        $konversi .= $sisaPcs > 0 ? " + {$sisaPcs} pcs)" : ")";
+                        $konversi .= $sisaPcs > 0 ? " + {$sisaPcs} pcs)" : ')';
                     }
                 }
 
@@ -98,6 +70,7 @@ class BarangKeluarService
                         'new_stok' => $barang->stok,
                         'jumlah_keluar' => $totalDiambil,
                         'no_keluar' => $barangKeluar->no_keluar,
+                        'jenis_keluar' => $barangKeluar->jenis_keluar,
                         'tipe' => 'keluar',
                     ])
                     ->log("Stok barang '{$barang->nama_barang}' berkurang {$totalDiambil} pcs{$konversi} melalui {$barangKeluar->no_keluar}");
@@ -120,7 +93,7 @@ class BarangKeluarService
     public function generateNoKeluar(): string
     {
         do {
-            $noKeluar = 'KLR-' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
+            $noKeluar = 'KLR-'.date('Ymd').strtoupper(bin2hex(random_bytes(3)));
         } while (BarangKeluar::where('no_keluar', $noKeluar)->exists());
 
         return $noKeluar;

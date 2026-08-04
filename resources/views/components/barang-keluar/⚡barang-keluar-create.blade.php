@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
     public $tgl_keluar;
+    public $jenis_keluar;
     public $keterangan;
 
     public $items = [];
@@ -15,6 +16,7 @@ new class extends Component {
 
     protected $rules = [
         'tgl_keluar' => 'required|date',
+        'jenis_keluar' => 'required|in:penjualan,kerusakan,kadaluarsa,pemakaian_internal',
         'keterangan' => 'nullable|string|max:1000',
         'items' => 'required|array|min:1',
         'items.*.barang_id' => 'required|exists:barangs,id|distinct',
@@ -33,6 +35,7 @@ new class extends Component {
             return $this->redirect(route('dashboard'), navigate: true);
         }
         $this->tgl_keluar = date('Y-m-d');
+        $this->jenis_keluar = 'penjualan';
         $this->addItem();
     }
 
@@ -149,6 +152,17 @@ new class extends Component {
                         </div>
 
                         <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Jenis Keluar</label>
+                            <select wire:model="jenis_keluar" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white cursor-pointer @error('jenis_keluar') border-red-500 @enderror">
+                                <option value="penjualan">Penjualan</option>
+                                <option value="kerusakan">Kerusakan</option>
+                                <option value="kadaluarsa">Kadaluarsa</option>
+                                <option value="pemakaian_internal">Pemakaian Internal</option>
+                            </select>
+                            @error('jenis_keluar') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1">Keterangan (Opsional)</label>
                             <textarea wire:model="keterangan" rows="3" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none" placeholder="Catatan keperluan barang keluar..."></textarea>
                             @error('keterangan') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
@@ -172,8 +186,8 @@ new class extends Component {
                             @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1, 'stok' => $b->stok])->toJson(); @endphp
                             @foreach($items as $index => $item)
                             <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
-                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                <div class="md:col-span-6">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                                <div class="md:col-span-11">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cari SKU / Nama Barang</label>
                                     <div wire:key="search-{{ $index }}" x-data="{
                                         search: '',
@@ -234,30 +248,25 @@ new class extends Component {
                                     </div>
                                     @error("items.$index.barang_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                        Jumlah
-                                        <template x-if="selectedId">
-                                            <span x-text="'(' + (barangs.find(b => b.id === selectedId)?.satuan || 'pcs') + ')'"></span>
-                                        </template>
-                                    </label>
+                                <div class="md:col-span-1 flex justify-end md:justify-start">
+                                    @if(count($items) > 1)
+                                    <button type="button" wire:click="removeItem({{ $index }})" class="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all" title="Hapus Baris">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                    @endif
+                                </div>
+                                <div class="md:col-span-6">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah Keluar</label>
                                     <div class="flex gap-2" x-data="{ mode: 'pcs', isi: 1, kemasan: 0, sisaPcs: 0 }"
                                          x-init="
-                                            mode = @entangle('items.' + $el.closest('[wire\\:key]').getAttribute('wire:key').replace('item-', '') + '.satuan_mode');
+                                            const idx = $el.closest('[wire\\:key]').getAttribute('wire:key').replace('item-', '');
+                                            mode = $wire.entangle('items.' + idx + '.satuan_mode');
                                             $watch('selectedId', (id) => {
                                                 const b = barangs.find(x => x.id === id);
                                                 if (b) { isi = b.isi; kemasan = 0; sisaPcs = 0; }
                                             });
                                             $watch('kemasan', (val) => updateJumlah());
                                             $watch('sisaPcs', (val) => updateJumlah());
-                                         "
-                                         x-init="
-                                            const idx = $el.closest('[wire\\:key]').getAttribute('wire:key').replace('item-', '');
-                                            mode = @entangle('items.' + idx + '.satuan_mode');
-                                            $watch('selectedId', (id) => {
-                                                const b = barangs.find(x => x.id === id);
-                                                if (b) { isi = b.isi; kemasan = 0; sisaPcs = 0; }
-                                            });
                                             function updateJumlah() {
                                                 const total = kemasan * isi + sisaPcs;
                                                 document.querySelector('input[wire\\:model=\"items.' + idx + '.jumlah\"]').value = Math.max(total, 1);
@@ -275,14 +284,17 @@ new class extends Component {
                                         </div>
                                         <div class="flex-1">
                                             <template x-if="mode === 'pcs'">
-                                                <input wire:model="items.{{ $index }}.jumlah" type="number" min="1"
-                                                       class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                                <div class="relative">
+                                                    <input wire:model="items.{{ $index }}.jumlah" type="number" min="1"
+                                                           class="w-full px-4 py-2 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                                    <span class="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-slate-400 uppercase pointer-events-none">pcs</span>
+                                                </div>
                                             </template>
                                             <template x-if="mode === 'satuan'">
                                                 <div class="flex items-center gap-1">
                                                     <input x-model.number="kemasan" type="number" min="0"
                                                            class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                                           :placeholder="barangs.find(b => b.id === selectedId)?.satuan || 'Box'">
+                                                           :placeholder="barangs.find(b => b.id === selectedId)?.satuan || 'Satuan'">
                                                     <span class="text-xs text-slate-400 font-bold">+</span>
                                                     <input x-model.number="sisaPcs" type="number" min="0"
                                                            class="w-16 px-2 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-center"
@@ -293,31 +305,36 @@ new class extends Component {
                                             </template>
                                         </div>
                                     </div>
-                                    <template x-if="selectedId">
-                                        <div class="text-xs text-slate-400 mt-1">
-                                            <span x-text="'1 ' + (barangs.find(b => b.id === selectedId)?.satuan || '') + ' = ' + (barangs.find(b => b.id === selectedId)?.isi || 1) + ' pcs'"></span>
-                                        </div>
-                                    </template>
+                                    <div class="text-xs text-slate-400 mt-1.5 space-y-0.5">
+                                        <template x-if="selectedId">
+                                            <p x-text="'1 ' + (barangs.find(b => b.id === selectedId)?.satuan || '') + ' = ' + (barangs.find(b => b.id === selectedId)?.isi || 1) + ' pcs'"></p>
+                                        </template>
+                                        <p>Total dalam pcs. Mode <b>Pcs</b> = isi langsung, mode <b>Satuan</b> = isi kemasan + sisa pcs.</p>
+                                    </div>
                                     @error("items.$index.jumlah") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
+                                <div class="md:col-span-6">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Stok Tersedia</label>
-                                    <div class="px-4 py-2 rounded-lg border border-slate-200 bg-slate-100 text-slate-700 text-sm font-bold">
+                                    <div class="px-4 py-2 rounded-lg border border-slate-200 bg-slate-100 text-slate-700 text-sm font-bold flex items-center">
                                         @php
                                             $stokTersedia = 0;
+                                            $satuanTersedia = '';
                                             if ($item['barang_id']) {
                                                 $b = \App\Models\Barang::find($item['barang_id']);
-                                                $stokTersedia = $b ? $b->stok : 0;
+                                                if ($b) {
+                                                    $stokTersedia = $b->stok;
+                                                    $satuanTersedia = $b->satuan;
+                                                }
                                             }
                                         @endphp
-                                        {{ $stokTersedia }}
+                                        @if($item['barang_id'])
+                                            {{ $stokTersedia }}
+                                            <span class="text-xs text-slate-400 font-medium ml-1">{{ $satuanTersedia }}</span>
+                                        @else
+                                            <span class="text-slate-400 font-normal italic text-xs">Pilih barang dulu</span>
+                                        @endif
                                     </div>
-                                </div>
-                                <div class="md:col-span-1 flex justify-center">
-                                    @if(count($items) > 1)
-                                    <button type="button" wire:click="removeItem({{ $index }})" class="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all" title="Hapus Baris">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                    @endif
+                                    <p class="text-xs text-slate-400 mt-1.5">Stok sistem saat ini &mdash; otomatis, tidak diisi manual.</p>
                                 </div>
                             </div>
                         </div>
@@ -374,6 +391,10 @@ new class extends Component {
                             <p class="text-sm font-medium text-slate-900 mt-1">
                                 {{ $tgl_keluar ? date('d F Y', strtotime($tgl_keluar)) : '-' }}
                             </p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jenis Keluar</p>
+                            <p class="text-sm font-medium text-slate-900 mt-1">{{ \App\Models\BarangKeluar::JENIS_KELUAR[$jenis_keluar] ?? $jenis_keluar }}</p>
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Keterangan</p>

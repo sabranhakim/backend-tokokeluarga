@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBarangKeluarRequest extends FormRequest
@@ -16,6 +15,7 @@ class StoreBarangKeluarRequest extends FormRequest
     {
         return [
             'tgl_keluar' => 'required|date',
+            'jenis_keluar' => 'nullable|in:penjualan,kerusakan,kadaluarsa,pemakaian_internal',
             'keterangan' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
             'items.*.barang_id' => 'required|exists:barangs,id|distinct',

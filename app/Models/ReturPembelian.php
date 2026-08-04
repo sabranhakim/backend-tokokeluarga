@@ -9,33 +9,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class BarangKeluar extends Model
+class ReturPembelian extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'id',
-        'no_keluar',
+        'no_retur',
+        'supplier_id',
         'user_id',
-        'tgl_keluar',
-        'jenis_keluar',
+        'tgl_retur',
         'keterangan',
     ];
 
     protected $casts = [
-        'tgl_keluar' => 'date',
+        'tgl_retur' => 'date',
     ];
 
-    public const JENIS_KELUAR = [
-        'penjualan' => 'Penjualan',
-        'kerusakan' => 'Kerusakan',
-        'kadaluarsa' => 'Kadaluarsa',
-        'pemakaian_internal' => 'Pemakaian Internal',
-    ];
-
-    public function getJenisKeluarLabelAttribute(): string
+    public function supplier(): BelongsTo
     {
-        return self::JENIS_KELUAR[$this->jenis_keluar] ?? $this->jenis_keluar;
+        return $this->belongsTo(Supplier::class)->withTrashed()->withDefault([
+            'nama_supplier' => 'Supplier telah dihapus permanen',
+        ]);
     }
 
     public function user(): BelongsTo
@@ -43,8 +38,8 @@ class BarangKeluar extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function detailBarangKeluars(): HasMany
+    public function detailReturPembelians(): HasMany
     {
-        return $this->hasMany(DetailBarangKeluar::class);
+        return $this->hasMany(DetailReturPembelian::class);
     }
 }

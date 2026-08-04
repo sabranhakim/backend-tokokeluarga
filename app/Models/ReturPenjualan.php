@@ -9,42 +9,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class BarangKeluar extends Model
+class ReturPenjualan extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'id',
-        'no_keluar',
+        'no_retur',
         'user_id',
-        'tgl_keluar',
-        'jenis_keluar',
+        'tgl_retur',
+        'nama_pelanggan',
         'keterangan',
     ];
 
     protected $casts = [
-        'tgl_keluar' => 'date',
+        'tgl_retur' => 'date',
     ];
-
-    public const JENIS_KELUAR = [
-        'penjualan' => 'Penjualan',
-        'kerusakan' => 'Kerusakan',
-        'kadaluarsa' => 'Kadaluarsa',
-        'pemakaian_internal' => 'Pemakaian Internal',
-    ];
-
-    public function getJenisKeluarLabelAttribute(): string
-    {
-        return self::JENIS_KELUAR[$this->jenis_keluar] ?? $this->jenis_keluar;
-    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function detailBarangKeluars(): HasMany
+    public function detailReturPenjualans(): HasMany
     {
-        return $this->hasMany(DetailBarangKeluar::class);
+        return $this->hasMany(DetailReturPenjualan::class);
     }
 }

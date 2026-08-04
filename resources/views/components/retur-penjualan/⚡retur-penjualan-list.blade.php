@@ -2,7 +2,7 @@
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\BarangKeluar;
+use App\Models\ReturPenjualan;
 use Illuminate\Support\Facades\Gate;
 
 new class extends Component {
@@ -14,8 +14,8 @@ new class extends Component {
 
     public function mount()
     {
-        if (!Gate::allows('view barang_keluar') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
-            session()->flash('error', 'Anda tidak memiliki hak akses ke riwayat barang keluar.');
+        if (! Gate::allows('view retur_penjualan') && ! auth()->user()->hasAnyRole(['admin', 'staff'])) {
+            session()->flash('error', 'Anda tidak memiliki hak akses ke riwayat retur penjualan.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
     }
@@ -23,12 +23,13 @@ new class extends Component {
     public function with()
     {
         return [
-            'barangKeluars' => BarangKeluar::with(['user'])
-                ->when($this->filterDateFrom, fn($q) => $q->whereDate('tgl_keluar', '>=', $this->filterDateFrom))
-                ->when($this->filterDateTo, fn($q) => $q->whereDate('tgl_keluar', '<=', $this->filterDateTo))
-                ->where(function($query) {
-                    $query->where('no_keluar', 'like', '%' . $this->search . '%')
-                        ->orWhere('keterangan', 'like', '%' . $this->search . '%');
+            'returPenjualans' => ReturPenjualan::with(['user'])
+                ->when($this->filterDateFrom, fn ($q) => $q->whereDate('tgl_retur', '>=', $this->filterDateFrom))
+                ->when($this->filterDateTo, fn ($q) => $q->whereDate('tgl_retur', '<=', $this->filterDateTo))
+                ->where(function ($query) {
+                    $query->where('no_retur', 'like', '%' . $this->search . '%')
+                        ->orWhere('keterangan', 'like', '%' . $this->search . '%')
+                        ->orWhere('nama_pelanggan', 'like', '%' . $this->search . '%');
                 })
                 ->latest()
                 ->paginate(10),
@@ -52,13 +53,13 @@ new class extends Component {
 
     public function delete($id)
     {
-        if (!Gate::allows('delete barang_keluar') && !auth()->user()->hasRole('admin')) {
+        if (! Gate::allows('delete retur_penjualan') && ! auth()->user()->hasRole('admin')) {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus data ini.');
             return;
         }
-        $barangKeluar = BarangKeluar::findOrFail($id);
-        $barangKeluar->delete();
-        $this->dispatch('notify', 'Data barang keluar berhasil dihapus');
+        $returPenjualan = ReturPenjualan::findOrFail($id);
+        $returPenjualan->delete();
+        $this->dispatch('notify', 'Data retur penjualan berhasil dihapus');
     }
 };
 ?>
@@ -66,25 +67,20 @@ new class extends Component {
 <div class="p-6">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-            <h3 class="text-xl font-bold text-slate-800">Riwayat Barang Keluar</h3>
-            <p class="text-sm text-slate-500">Daftar transaksi barang keluar dari gudang</p>
+            <h3 class="text-xl font-bold text-slate-800">Riwayat Retur Penjualan</h3>
+            <p class="text-sm text-slate-500">Barang yang dikembalikan oleh pelanggan</p>
         </div>
         <div class="flex items-center gap-3 w-full md:w-auto">
             <div class="relative flex-1 md:w-64">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </span>
-                <input wire:model.live="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all" placeholder="Cari no. keluar atau keterangan...">
+                <input wire:model.live="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all" placeholder="Cari no. retur, pelanggan, atau keterangan...">
             </div>
-            @can('view trash')
-            <a href="{{ route('trash.barang-keluar.index') }}" class="text-slate-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all" title="Buka Trash">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </a>
-            @endcan
-            @can('create barang_keluar')
-            <a href="{{ route('barang-keluar.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center whitespace-nowrap shadow-lg shadow-blue-100">
+            @can('create retur_penjualan')
+            <a href="{{ route('retur-penjualan.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center whitespace-nowrap shadow-lg shadow-blue-100">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                Tambah Barang Keluar
+                Tambah Retur Penjualan
             </a>
             @endcan
         </div>
@@ -107,32 +103,28 @@ new class extends Component {
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-slate-50/50">
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">No. Keluar</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">No. Retur</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tanggal</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Jenis</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pelanggan</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Petugas</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Keterangan</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody wire:loading.class="hidden" class="divide-y divide-slate-100">
-                    @forelse($barangKeluars as $barangKeluar)
+                    @forelse($returPenjualans as $returPenjualan)
                     <tr class="hover:bg-slate-50/50 transition-colors">
-                        <td class="px-6 py-4 font-mono text-sm font-bold text-slate-700">{{ $barangKeluar->no_keluar }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600">{{ $barangKeluar->tgl_keluar->format('d/m/Y') }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $barangKeluar->jenis_keluar === 'penjualan' ? 'bg-blue-50 text-blue-600' : ($barangKeluar->jenis_keluar === 'kerusakan' ? 'bg-amber-50 text-amber-600' : ($barangKeluar->jenis_keluar === 'kadaluarsa' ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600')) }}">
-                                {{ $barangKeluar->jenis_keluar_label }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-600">{{ $barangKeluar->user->name }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{{ $barangKeluar->keterangan ?: '-' }}</td>
+                        <td class="px-6 py-4 font-mono text-sm font-bold text-slate-700">{{ $returPenjualan->no_retur }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600">{{ $returPenjualan->tgl_retur->format('d/m/Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600">{{ $returPenjualan->nama_pelanggan ?: '-' }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600">{{ $returPenjualan->user->name }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{{ $returPenjualan->keterangan ?: '-' }}</td>
                         <td class="px-6 py-4 text-right space-x-3">
-                            <a href="{{ route('barang-keluar.show', $barangKeluar) }}" class="text-blue-600 hover:text-blue-700 font-bold text-sm" title="Detail">
+                            <a href="{{ route('retur-penjualan.show', $returPenjualan) }}" class="text-blue-600 hover:text-blue-700 font-bold text-sm" title="Detail">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </a>
-                            @can('delete barang_keluar')
-                            <button wire:click="delete('{{ $barangKeluar->id }}')" wire:confirm="Yakin ingin menghapus data ini?" class="text-red-600 hover:text-red-700 font-bold text-sm" title="Hapus">
+                            @can('delete retur_penjualan')
+                            <button wire:click="delete('{{ $returPenjualan->id }}')" wire:confirm="Yakin ingin menghapus data ini?" class="text-red-600 hover:text-red-700 font-bold text-sm" title="Hapus">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                             @endcan
@@ -140,7 +132,7 @@ new class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-10 text-center text-slate-500 italic text-sm">Belum ada riwayat barang keluar.</td>
+                        <td colspan="6" class="px-6 py-10 text-center text-slate-500 italic text-sm">Belum ada riwayat retur penjualan.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -149,7 +141,7 @@ new class extends Component {
                     <tr>
                         <td class="px-6 py-4"><div class="h-5 w-32 skeleton font-mono"></div></td>
                         <td class="px-6 py-4"><div class="h-4 w-20 skeleton"></div></td>
-                        <td class="px-6 py-4"><div class="h-4 w-20 skeleton"></div></td>
+                        <td class="px-6 py-4"><div class="h-5 w-24 skeleton"></div></td>
                         <td class="px-6 py-4"><div class="h-5 w-24 skeleton"></div></td>
                         <td class="px-6 py-4"><div class="h-4 w-40 skeleton"></div></td>
                         <td class="px-6 py-4 text-right"><div class="h-6 w-16 skeleton ml-auto"></div></td>
@@ -159,7 +151,7 @@ new class extends Component {
             </table>
         </div>
         <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100">
-            {{ $barangKeluars->links() }}
+            {{ $returPenjualans->links() }}
         </div>
     </div>
 </div>

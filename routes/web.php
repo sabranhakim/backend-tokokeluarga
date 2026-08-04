@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\Web\BarangController;
 use App\Http\Controllers\Web\BarangKeluarController;
+use App\Http\Controllers\Web\BarangStokController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\KategoriController;
 use App\Http\Controllers\Web\PenerimaanBarangController;
 use App\Http\Controllers\Web\ReportController;
+use App\Http\Controllers\Web\ReturPembelianController;
+use App\Http\Controllers\Web\ReturPenjualanController;
+use App\Http\Controllers\Web\StockOpnameController;
 use App\Http\Controllers\Web\SupplierController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,7 +61,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Barang Stok Routes
-    Route::get('/barang-stok', [\App\Http\Controllers\Web\BarangStokController::class, 'index'])->name('barang-stok.index');
+    Route::get('/barang-stok', [BarangStokController::class, 'index'])->name('barang-stok.index');
 
     // Resource Routes
     Route::get('/barang/history', function () {
@@ -92,6 +96,30 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
         Route::get('/{barangKeluar}', [BarangKeluarController::class, 'show'])->name('show');
         Route::delete('/{barangKeluar}', [BarangKeluarController::class, 'destroy'])->name('destroy');
+    });
+
+    // Retur Pembelian Routes
+    Route::prefix('retur-pembelian')->name('retur-pembelian.')->group(function () {
+        Route::get('/', [ReturPembelianController::class, 'index'])->name('index');
+        Route::get('/create', [ReturPembelianController::class, 'create'])->name('create');
+        Route::get('/{returPembelian}', [ReturPembelianController::class, 'show'])->name('show');
+        Route::delete('/{returPembelian}', [ReturPembelianController::class, 'destroy'])->name('destroy');
+    });
+
+    // Retur Penjualan Routes
+    Route::prefix('retur-penjualan')->name('retur-penjualan.')->group(function () {
+        Route::get('/', [ReturPenjualanController::class, 'index'])->name('index');
+        Route::get('/create', [ReturPenjualanController::class, 'create'])->name('create');
+        Route::get('/{returPenjualan}', [ReturPenjualanController::class, 'show'])->name('show');
+        Route::delete('/{returPenjualan}', [ReturPenjualanController::class, 'destroy'])->name('destroy');
+    });
+
+    // Stock Opname Routes
+    Route::prefix('stock-opname')->name('stock-opname.')->group(function () {
+        Route::get('/', [StockOpnameController::class, 'index'])->name('index');
+        Route::get('/create', [StockOpnameController::class, 'create'])->name('create');
+        Route::get('/{stockOpname}', [StockOpnameController::class, 'show'])->name('show');
+        Route::delete('/{stockOpname}', [StockOpnameController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('activity', function () {

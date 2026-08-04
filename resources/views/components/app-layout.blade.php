@@ -212,6 +212,30 @@
                     <span class="ml-3">Barang Keluar</span>
                 </a>
 
+                <a href="{{ route('retur-pembelian.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('retur-pembelian.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('retur-pembelian.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h2m4 0h6M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <span class="ml-3">Retur Pembelian</span>
+                </a>
+
+                <a href="{{ route('retur-penjualan.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('retur-penjualan.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('retur-penjualan.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/></svg>
+                    </div>
+                    <span class="ml-3">Retur Penjualan</span>
+                </a>
+
+                <a href="{{ route('stock-opname.index') }}" 
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('stock-opname.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <div class="p-2 rounded-lg {{ request()->routeIs('stock-opname.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H5m14 0h-2a4 4 0 00-4 4v2m-2 4h.01M9 21h6a2 2 0 002-2V5a2 2 0 00-2-2H9a2 2 0 00-2-2H9a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <span class="ml-3">Stock Opname</span>
+                </a>
+
                 <a href="{{ route('laporan.index') }}" 
                    class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('laporan.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
                     <div class="p-2 rounded-lg {{ request()->routeIs('laporan.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">

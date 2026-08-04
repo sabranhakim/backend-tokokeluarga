@@ -7,9 +7,15 @@ use App\Models\BarangKeluar;
 use App\Models\BarangStok;
 use App\Models\DetailBarangKeluar;
 use App\Models\DetailPenerimaan;
+use App\Models\DetailReturPembelian;
+use App\Models\DetailReturPenjualan;
+use App\Models\DetailStockOpname;
 use App\Models\Kategori;
 use App\Models\PenerimaanBarang;
+use App\Models\ReturPembelian;
+use App\Models\ReturPenjualan;
 use App\Models\StockMovement;
+use App\Models\StockOpname;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -26,8 +32,14 @@ class DatabaseSeeder extends Seeder
         StockMovement::truncate();
         DetailBarangKeluar::truncate();
         DetailPenerimaan::truncate();
+        DetailReturPembelian::truncate();
+        DetailReturPenjualan::truncate();
+        DetailStockOpname::truncate();
         BarangStok::truncate();
         BarangKeluar::truncate();
+        ReturPembelian::truncate();
+        ReturPenjualan::truncate();
+        StockOpname::truncate();
         Barang::truncate();
         PenerimaanBarang::truncate();
         Kategori::truncate();
@@ -41,6 +53,9 @@ class DatabaseSeeder extends Seeder
             'view kategori', 'manage kategori',
             'view penerimaan', 'create penerimaan', 'verify penerimaan', 'delete penerimaan',
             'view barang_keluar', 'create barang_keluar', 'delete barang_keluar',
+            'view retur_pembelian', 'create retur_pembelian', 'delete retur_pembelian',
+            'view retur_penjualan', 'create retur_penjualan', 'delete retur_penjualan',
+            'view stock_opname', 'create stock_opname', 'finalize stock_opname', 'delete stock_opname',
             'view trash', 'manage trash',
             'manage laporan', 'manage activity',
         ];
@@ -59,6 +74,9 @@ class DatabaseSeeder extends Seeder
             'view kategori', 'manage kategori',
             'view penerimaan', 'create penerimaan',
             'view barang_keluar', 'create barang_keluar',
+            'view retur_pembelian', 'create retur_pembelian',
+            'view retur_penjualan', 'create retur_penjualan',
+            'view stock_opname', 'create stock_opname', 'finalize stock_opname',
             'manage laporan',
         ]);
 
@@ -159,7 +177,7 @@ class DatabaseSeeder extends Seeder
 
             foreach ($kData['barangs'] as $bData) {
                 $barang = Barang::create([
-                    'kode_barang' => 'BRG-' . $kodeCounter,
+                    'kode_barang' => 'BRG-'.$kodeCounter,
                     'nama_barang' => $bData['nama_barang'],
                     'kategori_id' => $kategori->id,
                     'supplier_id' => $suppliers->random()->id,
@@ -214,7 +232,7 @@ class DatabaseSeeder extends Seeder
             $totalJumlah = collect($pi['details'])->sum('jumlah');
             $barangIds = collect($pi['details'])->pluck('barang_idx')->unique();
 
-            $noTerima = 'TRM-' . $tgl->format('Ymd') . strtoupper(bin2hex(random_bytes(3)));
+            $noTerima = 'TRM-'.$tgl->format('Ymd').strtoupper(bin2hex(random_bytes(3)));
 
             $penerimaan = PenerimaanBarang::create([
                 'no_terima' => $noTerima,
@@ -264,34 +282,38 @@ class DatabaseSeeder extends Seeder
         }
 
         $barangKeluarItems = [
-            ['tgl' => '-1 month', 'items' => [
+            ['tgl' => '-1 month', 'jenis' => 'penjualan', 'items' => [
                 ['barang_idx' => 0, 'jumlah' => 8],
                 ['barang_idx' => 5, 'jumlah' => 2],
                 ['barang_idx' => 10, 'jumlah' => 5],
             ], 'ket' => 'Pesanan rutin bulanan'],
-            ['tgl' => '-2 weeks', 'items' => [
+            ['tgl' => '-2 weeks', 'jenis' => 'penjualan', 'items' => [
                 ['barang_idx' => 0, 'jumlah' => 4],
                 ['barang_idx' => 2, 'jumlah' => 6],
             ], 'ket' => 'Supplier A'],
-            ['tgl' => '-1 week', 'items' => [
+            ['tgl' => '-1 week', 'jenis' => 'kerusakan', 'items' => [
                 ['barang_idx' => 15, 'jumlah' => 8],
                 ['barang_idx' => 20, 'jumlah' => 3],
-            ], 'ket' => 'Pesanan bakery'],
-            ['tgl' => '-3 days', 'items' => [
+            ], 'ket' => 'Barang rusak saat pengiriman'],
+            ['tgl' => '-3 days', 'jenis' => 'penjualan', 'items' => [
                 ['barang_idx' => 25, 'jumlah' => 5],
                 ['barang_idx' => 26, 'jumlah' => 4],
                 ['barang_idx' => 11, 'jumlah' => 3],
             ], 'ket' => 'Restock harian'],
+            ['tgl' => '-1 day', 'jenis' => 'pemakaian_internal', 'items' => [
+                ['barang_idx' => 12, 'jumlah' => 2],
+            ], 'ket' => 'Pemakaian untuk produksi kue'],
         ];
 
         foreach ($barangKeluarItems as $bki) {
             $tgl = now()->modify($bki['tgl']);
-            $noKeluar = 'KLR-' . $tgl->format('Ymd') . strtoupper(bin2hex(random_bytes(3)));
+            $noKeluar = 'KLR-'.$tgl->format('Ymd').strtoupper(bin2hex(random_bytes(3)));
 
             $barangKeluar = BarangKeluar::create([
                 'no_keluar' => $noKeluar,
                 'user_id' => $staff->id,
                 'tgl_keluar' => $tgl,
+                'jenis_keluar' => $bki['jenis'],
                 'keterangan' => $bki['ket'],
             ]);
 
@@ -306,7 +328,9 @@ class DatabaseSeeder extends Seeder
                     ->get();
 
                 foreach ($batches as $batch) {
-                    if ($sisaKurang <= 0) break;
+                    if ($sisaKurang <= 0) {
+                        break;
+                    }
 
                     $ambil = min($batch->stok, $sisaKurang);
                     $stokSebelum = $batch->stok;
@@ -338,11 +362,250 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        $this->command->info('Seeded: ' . Kategori::count() . ' categories, ' . Barang::count() . ' items');
-        $this->command->info('Seeded: ' . Supplier::count() . ' suppliers');
-        $this->command->info('Seeded: ' . PenerimaanBarang::count() . ' penerimaan with ' . DetailPenerimaan::count() . ' details');
-        $this->command->info('Seeded: ' . BarangStok::count() . ' batch stocks');
-        $this->command->info('Seeded: ' . BarangKeluar::count() . ' barang keluar with ' . DetailBarangKeluar::count() . ' details');
-        $this->command->info('Seeded: ' . StockMovement::count() . ' stock movements');
+        $returPembelianItems = [
+            ['supplier_idx' => 0, 'tgl' => '-20 days', 'items' => [
+                ['barang_idx' => 0, 'jumlah' => 3],
+            ], 'ket' => 'Tepung menerima reject dari pabrik'],
+            ['supplier_idx' => 2, 'tgl' => '-1 week', 'items' => [
+                ['barang_idx' => 10, 'jumlah' => 2],
+                ['barang_idx' => 12, 'jumlah' => 1],
+            ], 'ket' => 'Kemasan rusak saat diterima'],
+        ];
+
+        foreach ($returPembelianItems as $rpi) {
+            $tgl = now()->modify($rpi['tgl']);
+            $noRetur = 'RPB-'.$tgl->format('Ymd').strtoupper(bin2hex(random_bytes(3)));
+
+            $retur = ReturPembelian::create([
+                'no_retur' => $noRetur,
+                'supplier_id' => $suppliers[$rpi['supplier_idx']]->id,
+                'user_id' => $staff->id,
+                'tgl_retur' => $tgl,
+                'keterangan' => $rpi['ket'],
+            ]);
+
+            foreach ($rpi['items'] as $rii) {
+                $barang = $barangs[$rii['barang_idx']];
+                $sisaKurang = $rii['jumlah'];
+
+                $batches = BarangStok::where('barang_id', $barang->id)
+                    ->where('stok', '>', 0)
+                    ->orderBy('tgl_kadaluarsa', 'asc')
+                    ->orderBy('tgl_masuk', 'asc')
+                    ->get();
+
+                foreach ($batches as $batch) {
+                    if ($sisaKurang <= 0) {
+                        break;
+                    }
+
+                    $ambil = min($batch->stok, $sisaKurang);
+                    $stokSebelum = $batch->stok;
+                    $batch->decrement('stok', $ambil);
+                    $sisaKurang -= $ambil;
+
+                    DetailReturPembelian::create([
+                        'retur_pembelian_id' => $retur->id,
+                        'barang_id' => $barang->id,
+                        'barang_stok_id' => $batch->id,
+                        'jumlah' => $ambil,
+                    ]);
+
+                    StockMovement::create([
+                        'barang_id' => $barang->id,
+                        'barang_stok_id' => $batch->id,
+                        'user_id' => $staff->id,
+                        'type' => 'out',
+                        'quantity' => $ambil,
+                        'before_quantity' => $stokSebelum,
+                        'after_quantity' => $stokSebelum - $ambil,
+                        'reason' => "Seeder: Retur Pembelian #{$noRetur}",
+                        'reference_id' => $retur->id,
+                        'reference_type' => ReturPembelian::class,
+                    ]);
+                }
+
+                $barang->decrement('stok', $rii['jumlah']);
+            }
+        }
+
+        $returPenjualanItems = [
+            ['tgl' => '-15 days', 'pelanggan' => 'Bunda Cantik', 'items' => [
+                ['barang_idx' => 5, 'jumlah' => 2],
+            ], 'ket' => 'Kualitas tidak sesuai pesanan'],
+            ['tgl' => '-4 days', 'pelanggan' => null, 'items' => [
+                ['barang_idx' => 20, 'jumlah' => 1],
+                ['barang_idx' => 11, 'jumlah' => 1],
+            ], 'ket' => 'Barang lewat kedaluwarsa'],
+        ];
+
+        foreach ($returPenjualanItems as $rpj) {
+            $tgl = now()->modify($rpj['tgl']);
+            $noRetur = 'RPJ-'.$tgl->format('Ymd').strtoupper(bin2hex(random_bytes(3)));
+
+            $retur = ReturPenjualan::create([
+                'no_retur' => $noRetur,
+                'user_id' => $staff->id,
+                'tgl_retur' => $tgl,
+                'nama_pelanggan' => $rpj['pelanggan'],
+                'keterangan' => $rpj['ket'],
+            ]);
+
+            foreach ($rpj['items'] as $rji) {
+                $barang = $barangs[$rji['barang_idx']];
+                $stokSebelum = $barang->stok;
+
+                $barangStok = BarangStok::create([
+                    'barang_id' => $barang->id,
+                    'batch_number' => $noRetur,
+                    'stok' => $rji['jumlah'],
+                    'tgl_masuk' => $tgl,
+                    'harga_beli' => $barang->harga_beli,
+                ]);
+
+                $barang->increment('stok', $rji['jumlah']);
+
+                DetailReturPenjualan::create([
+                    'retur_penjualan_id' => $retur->id,
+                    'barang_id' => $barang->id,
+                    'jumlah' => $rji['jumlah'],
+                ]);
+
+                StockMovement::create([
+                    'barang_id' => $barang->id,
+                    'barang_stok_id' => $barangStok->id,
+                    'user_id' => $staff->id,
+                    'type' => 'in',
+                    'quantity' => $rji['jumlah'],
+                    'before_quantity' => $stokSebelum,
+                    'after_quantity' => $barang->stok,
+                    'reason' => "Seeder: Retur Penjualan #{$noRetur}",
+                    'reference_id' => $retur->id,
+                    'reference_type' => ReturPenjualan::class,
+                ]);
+            }
+        }
+
+        $opnameSelesai = StockOpname::create([
+            'no_opname' => 'OPN-'.now()->modify('-2 days')->format('Ymd').strtoupper(bin2hex(random_bytes(3))),
+            'user_id' => $staff->id,
+            'tgl_opname' => now()->modify('-2 days'),
+            'keterangan' => 'Opname rutin mingguan',
+            'status' => 'selesai',
+        ]);
+
+        $opnameSelesaiItems = [
+            ['barang_idx' => 0, 'fisik' => 2],
+            ['barang_idx' => 5, 'fisik' => 1],
+            ['barang_idx' => 15, 'fisik' => 3],
+        ];
+
+        $totalSelisihOpname = 0;
+        foreach ($opnameSelesaiItems as $osi) {
+            $barang = $barangs[$osi['barang_idx']];
+            $stokSistem = (int) $barang->stok;
+            $stokFisik = $osi['fisik'];
+            $selisih = $stokFisik - $stokSistem;
+            $totalSelisihOpname += $selisih;
+
+            DetailStockOpname::create([
+                'stock_opname_id' => $opnameSelesai->id,
+                'barang_id' => $barang->id,
+                'stok_sistem' => $stokSistem,
+                'stok_fisik' => $stokFisik,
+                'selisih' => $selisih,
+            ]);
+
+            if ($selisih != 0) {
+                if ($selisih > 0) {
+                    $barangStok = BarangStok::create([
+                        'barang_id' => $barang->id,
+                        'batch_number' => $opnameSelesai->no_opname,
+                        'stok' => $selisih,
+                        'tgl_masuk' => now()->modify('-2 days'),
+                        'harga_beli' => $barang->harga_beli,
+                    ]);
+                    $barang->increment('stok', $selisih);
+
+                    StockMovement::create([
+                        'barang_id' => $barang->id,
+                        'barang_stok_id' => $barangStok->id,
+                        'user_id' => $staff->id,
+                        'type' => 'adjustment',
+                        'quantity' => $selisih,
+                        'before_quantity' => $stokSistem,
+                        'after_quantity' => $barang->stok,
+                        'reason' => "Seeder: Stock Opname #{$opnameSelesai->no_opname}",
+                        'reference_id' => $opnameSelesai->id,
+                        'reference_type' => StockOpname::class,
+                    ]);
+                } else {
+                    $sisaKurang = abs($selisih);
+                    $batches = BarangStok::where('barang_id', $barang->id)
+                        ->where('stok', '>', 0)
+                        ->orderBy('tgl_kadaluarsa', 'asc')
+                        ->get();
+
+                    foreach ($batches as $batch) {
+                        if ($sisaKurang <= 0) {
+                            break;
+                        }
+
+                        $ambil = min($batch->stok, $sisaKurang);
+                        $stokSebelum = $batch->stok;
+                        $batch->decrement('stok', $ambil);
+                        $sisaKurang -= $ambil;
+
+                        StockMovement::create([
+                            'barang_id' => $barang->id,
+                            'barang_stok_id' => $batch->id,
+                            'user_id' => $staff->id,
+                            'type' => 'adjustment',
+                            'quantity' => $ambil,
+                            'before_quantity' => $stokSebelum,
+                            'after_quantity' => $stokSebelum - $ambil,
+                            'reason' => "Seeder: Stock Opname #{$opnameSelesai->no_opname}",
+                            'reference_id' => $opnameSelesai->id,
+                            'reference_type' => StockOpname::class,
+                        ]);
+                    }
+
+                    $barang->decrement('stok', abs($selisih));
+                }
+            }
+        }
+        $opnameSelesai->update(['total_selisih' => $totalSelisihOpname]);
+
+        $opnameDraft = StockOpname::create([
+            'no_opname' => 'OPN-'.now()->format('Ymd').strtoupper(bin2hex(random_bytes(3))),
+            'user_id' => $staff->id,
+            'tgl_opname' => now(),
+            'keterangan' => 'Opname penutupan bulan',
+            'status' => 'draft',
+        ]);
+
+        foreach ([['barang_idx' => 10, 'fisik' => 4], ['barang_idx' => 25, 'fisik' => 6]] as $odi) {
+            $barang = $barangs[$odi['barang_idx']];
+            $stokSistem = (int) $barang->stok;
+            $stokFisik = $odi['fisik'];
+
+            DetailStockOpname::create([
+                'stock_opname_id' => $opnameDraft->id,
+                'barang_id' => $barang->id,
+                'stok_sistem' => $stokSistem,
+                'stok_fisik' => $stokFisik,
+                'selisih' => $stokFisik - $stokSistem,
+            ]);
+        }
+
+        $this->command->info('Seeded: '.Kategori::count().' categories, '.Barang::count().' items');
+        $this->command->info('Seeded: '.Supplier::count().' suppliers');
+        $this->command->info('Seeded: '.PenerimaanBarang::count().' penerimaan with '.DetailPenerimaan::count().' details');
+        $this->command->info('Seeded: '.BarangStok::count().' batch stocks');
+        $this->command->info('Seeded: '.BarangKeluar::count().' barang keluar with '.DetailBarangKeluar::count().' details');
+        $this->command->info('Seeded: '.ReturPembelian::count().' retur pembelian');
+        $this->command->info('Seeded: '.ReturPenjualan::count().' retur penjualan');
+        $this->command->info('Seeded: '.StockOpname::count().' stock opname');
+        $this->command->info('Seeded: '.StockMovement::count().' stock movements');
     }
 }
