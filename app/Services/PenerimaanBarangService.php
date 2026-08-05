@@ -20,8 +20,10 @@ class PenerimaanBarangService
 
     protected $whatsappService;
 
-    public function __construct(CloudinaryService $cloudinaryService, WhatsAppService $whatsappService)
-    {
+    public function __construct(
+        CloudinaryService $cloudinaryService,
+        WhatsAppService $whatsappService,
+    ) {
         $this->cloudinaryService = $cloudinaryService;
         $this->whatsappService = $whatsappService;
     }
@@ -45,36 +47,38 @@ class PenerimaanBarangService
 
             // 1. Create PenerimaanBarang Header
             $penerimaan = PenerimaanBarang::create([
-                'id' => $data['id'] ?? null,
-                'no_terima' => $noTerima,
-                'supplier_id' => $data['supplier_id'],
-                'user_id' => auth()->id(),
-                'tgl_terima' => $data['tgl_terima'],
-                'foto_bon' => $fotoBonUrl,
-                'status_verifikasi' => 'pending', // Default is pending
+                "id" => $data["id"] ?? null,
+                "no_terima" => $noTerima,
+                "supplier_id" => $data["supplier_id"],
+                "user_id" => auth()->id(),
+                "tgl_terima" => $data["tgl_terima"],
+                "foto_bon" => $fotoBonUrl,
+                "status_verifikasi" => "pending", // Default is pending
             ]);
 
             // 2. Create Details (Stock is NOT updated yet, waiting for verification)
-            foreach ($data['items'] as $item) {
+            foreach ($data["items"] as $item) {
                 DetailPenerimaan::create([
-                    'id' => $item['id'] ?? null,
-                    'penerimaan_barang_id' => $penerimaan->id,
-                    'barang_id' => $item['barang_id'],
-                    'jumlah' => $item['jumlah'],
-                    'batch_number' => $item['batch_number'] ?? null,
-                    'tgl_kadaluarsa' => $item['tgl_kadaluarsa'] ?? null,
+                    "id" => $item["id"] ?? null,
+                    "penerimaan_barang_id" => $penerimaan->id,
+                    "barang_id" => $item["barang_id"],
+                    "jumlah" => $item["jumlah"],
+                    "batch_number" => $item["batch_number"] ?? null,
+                    "tgl_kadaluarsa" => $item["tgl_kadaluarsa"] ?? null,
                 ]);
             }
 
             // After all details are saved, reload relationships for the notification
-            $penerimaan->load(['supplier', 'user', 'detailPenerimaans.barang']);
+            $penerimaan->load(["supplier", "user", "detailPenerimaans.barang"]);
 
             // Send notifications after the transaction is successfully committed
             DB::afterCommit(function () use ($penerimaan) {
                 // Internal Database Notification
                 $users = User::all();
-                Notification::send($users, new NewPenerimaanNotification($penerimaan));
-
+                Notification::send(
+                    $users,
+                    new NewPenerimaanNotification($penerimaan),
+                );
             });
 
             return $penerimaan;
@@ -89,68 +93,79 @@ class PenerimaanBarangService
     public function verify(string $id, ?string $catatanVerifikasi = null)
     {
         return DB::transaction(function () use ($id, $catatanVerifikasi) {
-            $penerimaan = PenerimaanBarang::with(['supplier', 'detailPenerimaans.barang'])->findOrFail($id);
+            $penerimaan = PenerimaanBarang::with([
+                "supplier",
+                "detailPenerimaans.barang",
+            ])->findOrFail($id);
 
-            if ($penerimaan->status_verifikasi === 'verified') {
-                throw new \Exception('Penerimaan barang sudah diverifikasi sebelumnya.');
+            if ($penerimaan->status_verifikasi === "verified") {
+                throw new \Exception(
+                    "Penerimaan barang sudah diverifikasi sebelumnya.",
+                );
             }
 
             // 1. Update status
             $penerimaan->update([
-                'status_verifikasi' => 'verified',
-                'catatan_verifikasi' => $catatanVerifikasi,
+                "status_verifikasi" => "verified",
+                "catatan_verifikasi" => $catatanVerifikasi,
             ]);
 
             // 2. Create batch stock entries and update stock for each item
             foreach ($penerimaan->detailPenerimaans as $detail) {
-                $barang = Barang::where('id', $detail->barang_id)->lockForUpdate()->firstOrFail();
+                $barang = Barang::where("id", $detail->barang_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
                 $oldStokTotal = $barang->stok;
 
                 // Create batch stock entry (BarangStok)
                 $barangStok = BarangStok::create([
-                    'barang_id' => $barang->id,
-                    'detail_penerimaan_id' => $detail->id,
-                    'penerimaan_barang_id' => $penerimaan->id,
-                    'batch_number' => $detail->batch_number,
-                    'stok' => $detail->jumlah,
-                    'tgl_kadaluarsa' => $detail->tgl_kadaluarsa,
-                    'tgl_masuk' => $penerimaan->tgl_terima,
-                    'harga_beli' => $barang->harga_beli,
+                    "barang_id" => $barang->id,
+                    "detail_penerimaan_id" => $detail->id,
+                    "penerimaan_barang_id" => $penerimaan->id,
+                    "batch_number" => $detail->batch_number,
+                    "stok" => $detail->jumlah,
+                    "tgl_kadaluarsa" => $detail->tgl_kadaluarsa,
+                    "tgl_masuk" => $penerimaan->tgl_terima,
+                    "harga_beli" => $barang->harga_beli,
                 ]);
 
                 // Update cached total stock on barang
-                $barang->increment('stok', $detail->jumlah);
+                $barang->increment("stok", $detail->jumlah);
                 $newStokTotal = $barang->stok;
 
                 // Record Stock Movement for Audit
                 StockMovement::create([
-                    'barang_id' => $barang->id,
-                    'barang_stok_id' => $barangStok->id,
-                    'user_id' => auth()->id(),
-                    'type' => 'in',
-                    'quantity' => $detail->jumlah,
-                    'before_quantity' => $oldStokTotal,
-                    'after_quantity' => $newStokTotal,
-                    'reason' => "Penerimaan Barang #{$penerimaan->no_terima}" . ($catatanVerifikasi ? " ({$catatanVerifikasi})" : ""),
-                    'reference_id' => $penerimaan->id,
-                    'reference_type' => PenerimaanBarang::class,
+                    "barang_id" => $barang->id,
+                    "barang_stok_id" => $barangStok->id,
+                    "user_id" => auth()->id(),
+                    "type" => "in",
+                    "quantity" => $detail->jumlah,
+                    "before_quantity" => $oldStokTotal,
+                    "after_quantity" => $newStokTotal,
+                    "reason" =>
+                        "Penerimaan Barang #{$penerimaan->no_terima}" .
+                        ($catatanVerifikasi ? " ({$catatanVerifikasi})" : ""),
+                    "reference_id" => $penerimaan->id,
+                    "reference_type" => PenerimaanBarang::class,
                 ]);
 
                 // Log detailed stock movement (Activity Log)
-                $batchLabel = $detail->batch_number ?? '-';
+                $batchLabel = $detail->batch_number ?? "-";
                 activity()
                     ->performedOn($barang)
                     ->causedBy(auth()->user())
                     ->withProperties([
-                        'old_stok' => $oldStokTotal,
-                        'new_stok' => $newStokTotal,
-                        'jumlah_masuk' => $detail->jumlah,
-                        'batch_number' => $detail->batch_number,
-                        'tgl_kadaluarsa' => $detail->tgl_kadaluarsa,
-                        'no_terima' => $penerimaan->no_terima,
-                        'tipe' => 'masuk',
+                        "old_stok" => $oldStokTotal,
+                        "new_stok" => $newStokTotal,
+                        "jumlah_masuk" => $detail->jumlah,
+                        "batch_number" => $detail->batch_number,
+                        "tgl_kadaluarsa" => $detail->tgl_kadaluarsa,
+                        "no_terima" => $penerimaan->no_terima,
+                        "tipe" => "masuk",
                     ])
-                    ->log("Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} (Batch: {$batchLabel}) melalui verifikasi penerimaan {$penerimaan->no_terima}");
+                    ->log(
+                        "Stok barang '{$barang->nama_barang}' bertambah sebanyak {$detail->jumlah} {$barang->satuan} (Batch: {$batchLabel}) melalui verifikasi penerimaan {$penerimaan->no_terima}",
+                    );
             }
 
             // After commit, send notification to supplier
@@ -168,15 +183,20 @@ class PenerimaanBarangService
     public function reject(string $id, string $catatanPenolakan)
     {
         return DB::transaction(function () use ($id, $catatanPenolakan) {
-            $penerimaan = PenerimaanBarang::with(['supplier', 'detailPenerimaans.barang'])->findOrFail($id);
+            $penerimaan = PenerimaanBarang::with([
+                "supplier",
+                "detailPenerimaans.barang",
+            ])->findOrFail($id);
 
-            if ($penerimaan->status_verifikasi !== 'pending') {
-                throw new \Exception('Penerimaan barang sudah diverifikasi atau ditolak sebelumnya.');
+            if ($penerimaan->status_verifikasi !== "pending") {
+                throw new \Exception(
+                    "Penerimaan barang sudah diverifikasi atau ditolak sebelumnya.",
+                );
             }
 
             $penerimaan->update([
-                'status_verifikasi' => 'rejected',
-                'catatan_verifikasi' => $catatanPenolakan,
+                "status_verifikasi" => "rejected",
+                "catatan_verifikasi" => $catatanPenolakan,
             ]);
 
             DB::afterCommit(function () use ($penerimaan) {
@@ -190,80 +210,87 @@ class PenerimaanBarangService
     /**
      * Dispatch Rejection WhatsApp Notification Job.
      */
-    protected function dispatchRejectionWhatsAppJob(PenerimaanBarang $penerimaan): void
-    {
+    protected function dispatchRejectionWhatsAppJob(
+        PenerimaanBarang $penerimaan,
+    ): void {
         $supplier = $penerimaan->supplier;
 
-        if (! $supplier || ! $supplier->no_telp) {
+        if (!$supplier || !$supplier->no_telp) {
             return;
         }
 
-        $itemsList = '';
+        $itemsList = "";
         foreach ($penerimaan->detailPenerimaans as $detail) {
-            $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
+            $namaBarang = $detail->barang
+                ? $detail->barang->nama_barang
+                : "Barang tidak diketahui";
             $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
         }
 
-        $message = "❌ *PENERIMAAN DITOLAK*\n\n" .
-                   "Halo *{$supplier->nama_supplier}*,\n" .
-                   "Kami menginformasikan bahwa pengiriman barang Anda *DITOLAK* oleh tim administrasi kami.\n\n" .
-                   "Detail:\n" .
-                   "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
-                   '📅 Tgl Penolakan: ' . now()->format('d-m-Y H:i') . "\n\n" .
-                   "📝 Alasan Penolakan: *{$penerimaan->catatan_verifikasi}*\n\n" .
-                   "Daftar Barang:\n" .
-                   $itemsList . "\n" .
-                   "Status: *Ditolak*\n\n" .
-                   "Silakan hubungi kami untuk informasi lebih lanjut.\n" .
-                   "---------------------------\n" .
-                   '_Pesan Otomatis Grosir Toko Keluarga_';
+        $message =
+            "❌ *PENERIMAAN DITOLAK*\n\n" .
+            "Halo *{$supplier->nama_supplier}*,\n" .
+            "Kami menginformasikan bahwa pengiriman barang Anda *DITOLAK* oleh tim administrasi kami.\n\n" .
+            "Detail:\n" .
+            "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
+            "📅 Tgl Penolakan: " .
+            now()->format("d-m-Y H:i") .
+            "\n\n" .
+            "📝 Alasan Penolakan: *{$penerimaan->catatan_verifikasi}*\n\n" .
+            "Daftar Barang:\n" .
+            $itemsList .
+            "\n" .
+            "Status: *Ditolak*\n\n" .
+            "Silakan hubungi kami untuk informasi lebih lanjut.\n" .
+            "---------------------------\n" .
+            "_Pesan Otomatis Grosir Toko Keluarga_";
 
-        SendWhatsAppNotificationJob::dispatch(
-            $supplier->no_telp,
-            $message
-        );
+        SendWhatsAppNotificationJob::dispatch($supplier->no_telp, $message);
     }
 
     /**
      * Dispatch Verification WhatsApp Notification Job.
      */
-    protected function dispatchVerificationWhatsAppJob(PenerimaanBarang $penerimaan): void
-    {
+    protected function dispatchVerificationWhatsAppJob(
+        PenerimaanBarang $penerimaan,
+    ): void {
         $supplier = $penerimaan->supplier;
 
-        if (! $supplier || ! $supplier->no_telp) {
+        if (!$supplier || !$supplier->no_telp) {
             return;
         }
 
-        $itemsList = '';
+        $itemsList = "";
         foreach ($penerimaan->detailPenerimaans as $detail) {
-            $namaBarang = $detail->barang ? $detail->barang->nama_barang : 'Barang tidak diketahui';
+            $namaBarang = $detail->barang
+                ? $detail->barang->nama_barang
+                : "Barang tidak diketahui";
             $itemsList .= "- {$namaBarang}: {$detail->jumlah} {$detail->barang->satuan}\n";
         }
 
-        $catatanText = '';
+        $catatanText = "";
         if ($penerimaan->catatan_verifikasi) {
             $catatanText = "📝 Catatan Verifikasi: *{$penerimaan->catatan_verifikasi}*\n\n";
         }
 
-        $message = "✅ *VERIFIKASI PENERIMAAN BERHASIL*\n\n".
-                   "Halo *{$supplier->nama_supplier}*,\n".
-                   "Kami menginformasikan bahwa pengiriman barang Anda telah *SELESAI DIVERIFIKASI* oleh tim administrasi kami.\n\n".
-                   "Detail:\n".
-                   "📄 No. Terima: *{$penerimaan->no_terima}*\n".
-                   '📅 Tgl Verifikasi: '.now()->format('d-m-Y H:i')."\n\n".
-                   $catatanText.
-                   "Daftar Barang:\n".
-                   $itemsList."\n".
-                   "Status: *Telah Masuk ke Sistem Stok*\n\n".
-                   "Terima kasih atas kerja samanya.\n".
-                   "---------------------------\n".
-                   '_Pesan Otomatis Grosir Toko Keluarga_';
+        $message =
+            "✅ *PENERIMAAN BERHASIL*\n\n" .
+            "Halo *{$supplier->nama_supplier}*,\n" .
+            "Kami menginformasikan bahwa pengiriman barang Anda telah sampai ke toko kami.\n\n" .
+            "Detail:\n" .
+            "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
+            "📅 Tgl Masuk: " .
+            now()->format("d-m-Y H:i") .
+            "\n\n" .
+            $catatanText .
+            "Daftar Barang:\n" .
+            $itemsList .
+            "\n" .
+            "Terima kasih atas kerja samanya.\n" .
+            "---------------------------\n" .
+            "_Pesan Otomatis Grosir Toko Keluarga_";
 
-        SendWhatsAppNotificationJob::dispatch(
-            $supplier->no_telp,
-            $message
-        );
+        SendWhatsAppNotificationJob::dispatch($supplier->no_telp, $message);
     }
 
     /**
@@ -273,7 +300,13 @@ class PenerimaanBarangService
      */
     public function getAll()
     {
-        return PenerimaanBarang::with(['supplier', 'user', 'detailPenerimaans.barang'])->latest()->get();
+        return PenerimaanBarang::with([
+            "supplier",
+            "user",
+            "detailPenerimaans.barang",
+        ])
+            ->latest()
+            ->get();
     }
 
     /**
@@ -284,7 +317,11 @@ class PenerimaanBarangService
      */
     public function getById($id)
     {
-        return PenerimaanBarang::with(['supplier', 'user', 'detailPenerimaans.barang'])->findOrFail($id);
+        return PenerimaanBarang::with([
+            "supplier",
+            "user",
+            "detailPenerimaans.barang",
+        ])->findOrFail($id);
     }
 
     /**
@@ -295,8 +332,9 @@ class PenerimaanBarangService
     public function generateNoTerima(): string
     {
         do {
-            $noTerima = 'TRM-' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
-        } while (PenerimaanBarang::where('no_terima', $noTerima)->exists());
+            $noTerima =
+                "TRM-" . date("Ymd") . strtoupper(bin2hex(random_bytes(3)));
+        } while (PenerimaanBarang::where("no_terima", $noTerima)->exists());
 
         return $noTerima;
     }
