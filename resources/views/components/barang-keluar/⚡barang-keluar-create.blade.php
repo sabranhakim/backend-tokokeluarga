@@ -21,7 +21,6 @@ new class extends Component {
         'items' => 'required|array|min:1',
         'items.*.barang_id' => 'required|exists:barangs,id|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
-        'items.*.satuan_mode' => 'nullable|in:pcs,satuan',
     ];
 
     protected $messages = [
@@ -44,7 +43,6 @@ new class extends Component {
         $this->items[] = [
             'barang_id' => '',
             'jumlah' => 1,
-            'satuan_mode' => 'pcs',
         ];
     }
 
@@ -183,7 +181,7 @@ new class extends Component {
 
                     <div class="p-6">
                         <div class="space-y-4">
-                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1, 'stok' => $b->stok])->toJson(); @endphp
+                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'stok' => $b->stok])->toJson(); @endphp
                             @foreach($items as $index => $item)
                             <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
@@ -205,8 +203,7 @@ new class extends Component {
                                         },
                                         select(barang) {
                                             this.selectedId = barang.id;
-                                            const isiText = barang.isi > 1 ? ' (' + barang.isi + ' ' + barang.satuan + '/pcs)' : '';
-                                            this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang + ' (Stok: ' + barang.stok + ')' + isiText;
+                                            this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang + ' (Stok: ' + barang.stok + ')';
                                             this.search = '';
                                             this.open = false;
                                         },
@@ -236,7 +233,7 @@ new class extends Component {
                                                 <div @click="select(barang)"
                                                       class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors">
                                                     <div class="text-sm font-bold text-slate-800" x-text="barang.kode_barang"></div>
-                                                    <div class="text-xs text-slate-500" x-text="barang.nama_barang + ' (' + barang.satuan + ')' + (barang.isi > 1 ? ' - ' + barang.isi + ' ' + barang.satuan + '/pcs' : '') + ' - Stok: ' + barang.stok"></div>
+                                                    <div class="text-xs text-slate-500" x-text="barang.nama_barang + ' (' + barang.satuan + ') - Stok: ' + barang.stok"></div>
                                                 </div>
                                             </template>
                                         </div>
@@ -257,59 +254,14 @@ new class extends Component {
                                 </div>
                                 <div class="md:col-span-6">
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah Keluar</label>
-                                    <div class="flex gap-2" x-data="{ mode: 'pcs', isi: 1, kemasan: 0, sisaPcs: 0 }"
-                                         x-init="
-                                            const idx = $el.closest('[wire\\:key]').getAttribute('wire:key').replace('item-', '');
-                                            mode = $wire.entangle('items.' + idx + '.satuan_mode');
-                                            $watch('selectedId', (id) => {
-                                                const b = barangs.find(x => x.id === id);
-                                                if (b) { isi = b.isi; kemasan = 0; sisaPcs = 0; }
-                                            });
-                                            $watch('kemasan', (val) => updateJumlah());
-                                            $watch('sisaPcs', (val) => updateJumlah());
-                                            function updateJumlah() {
-                                                const total = kemasan * isi + sisaPcs;
-                                                document.querySelector('input[wire\\:model=\"items.' + idx + '.jumlah\"]').value = Math.max(total, 1);
-                                                document.querySelector('input[wire\\:model=\"items.' + idx + '.jumlah\"]').dispatchEvent(new Event('input', { bubbles: true }));
-                                            }
-                                         ">
-                                        <div class="flex rounded-lg border border-slate-200 overflow-hidden shrink-0">
-                                            <button type="button" @click="mode = 'pcs'; kemasan = 0; sisaPcs = 0; updateJumlah()"
-                                                    :class="mode === 'pcs' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'"
-                                                    class="px-3 py-2 text-xs font-bold transition-colors">Pcs</button>
-                                            <button type="button" @click="mode = 'satuan'; kemasan = 1; sisaPcs = 0"
-                                                    :class="mode === 'satuan' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'"
-                                                    class="px-3 py-2 text-xs font-bold transition-colors"
-                                                    x-text="barangs.find(b => b.id === selectedId)?.satuan || 'Satuan'"></button>
-                                        </div>
-                                        <div class="flex-1">
-                                            <template x-if="mode === 'pcs'">
-                                                <div class="relative">
-                                                    <input wire:model="items.{{ $index }}.jumlah" type="number" min="1"
-                                                           class="w-full px-4 py-2 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                                    <span class="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-slate-400 uppercase pointer-events-none">pcs</span>
-                                                </div>
-                                            </template>
-                                            <template x-if="mode === 'satuan'">
-                                                <div class="flex items-center gap-1">
-                                                    <input x-model.number="kemasan" type="number" min="0"
-                                                           class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                                           :placeholder="barangs.find(b => b.id === selectedId)?.satuan || 'Satuan'">
-                                                    <span class="text-xs text-slate-400 font-bold">+</span>
-                                                    <input x-model.number="sisaPcs" type="number" min="0"
-                                                           class="w-16 px-2 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-center"
-                                                           placeholder="pcs">
-                                                    <span class="text-xs text-slate-400 whitespace-nowrap" x-show="selectedId"
-                                                          x-text="'= ' + (kemasan * isi + sisaPcs) + ' pcs'"></span>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                    <div class="text-xs text-slate-400 mt-1.5 space-y-0.5">
-                                        <template x-if="selectedId">
-                                            <p x-text="'1 ' + (barangs.find(b => b.id === selectedId)?.satuan || '') + ' = ' + (barangs.find(b => b.id === selectedId)?.isi || 1) + ' pcs'"></p>
-                                        </template>
-                                        <p>Total dalam pcs. Mode <b>Pcs</b> = isi langsung, mode <b>Satuan</b> = isi kemasan + sisa pcs.</p>
+                                    @php
+                                        $barangTerpilih = $barangs->firstWhere('id', $item['barang_id'] ?? '');
+                                        $satuanItem = $barangTerpilih?->satuan ?? 'pcs';
+                                    @endphp
+                                    <div class="relative">
+                                        <input wire:model="items.{{ $index }}.jumlah" type="number" min="1"
+                                               class="w-full px-4 py-2 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                        <span class="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-slate-400 uppercase pointer-events-none">{{ $satuanItem }}</span>
                                     </div>
                                     @error("items.$index.jumlah") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
@@ -428,19 +380,7 @@ new class extends Component {
                                             <div class="font-mono text-[10px] text-slate-400">{{ $barangObj?->kode_barang }}</div>
                                         </td>
                                         <td class="px-4 py-2.5 text-right font-bold text-slate-900">
-                                            <div>{{ $item['jumlah'] }} pcs</div>
-                                            @php
-                                                $isiItem = $barangObj?->isi ?? 1;
-                                                $satuanItem = $barangObj?->satuan;
-                                            @endphp
-                                            @if($isiItem > 1 && $item['jumlah'] >= $isiItem)
-                                                <div class="text-[10px] text-slate-400">
-                                                    {{ floor($item['jumlah'] / $isiItem) }} {{ $satuanItem }}
-                                                    @if($item['jumlah'] % $isiItem > 0)
-                                                        + {{ $item['jumlah'] % $isiItem }} pcs
-                                                    @endif
-                                                </div>
-                                            @endif
+                                            <div>{{ $item['jumlah'] }} {{ $barangObj?->satuan ?? 'pcs' }}</div>
                                         </td>
                                     </tr>
                                 @endif

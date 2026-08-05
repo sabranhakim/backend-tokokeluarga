@@ -81,31 +81,6 @@ class PenerimaanBarangController extends Controller
     }
 
     /**
-     * Reject the specified penerimaan barang.
-     */
-    public function reject(Request $request, string $id): JsonResponse
-    {
-        $request->validate([
-            'catatan_verifikasi' => 'required|string|max:1000',
-        ]);
-
-        try {
-            $penerimaan = $this->penerimaanService->reject($id, $request->input('catatan_verifikasi'));
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Penerimaan barang berhasil ditolak',
-                'data' => $penerimaan,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
-        }
-    }
-
-    /**
      * Display the specified resource.
      */
     public function show(string $id): JsonResponse

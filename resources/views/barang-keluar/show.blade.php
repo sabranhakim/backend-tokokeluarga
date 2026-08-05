@@ -67,7 +67,6 @@
                                 $barang = $details->first()->barang;
                                 $totalJumlah = $details->sum('jumlah');
                                 $grandTotal += $totalJumlah;
-                                $isi = $barang->isi ?? 1;
                                 $satuan = $barang->satuan;
                             @endphp
                             <tr class="hover:bg-slate-50/50 transition-colors">
@@ -79,26 +78,16 @@
                                     <div class="text-xs text-slate-500">{{ $satuan }}</div>
                                     @if($details->count() > 1)
                                     <div class="mt-1 space-y-0.5">
-                                        @foreach($details as $d)
-                                        <span class="text-xs text-slate-400">Batch {{ $d->barangStok?->batch_number ?? 'N/A' }}: {{ $d->jumlah }} pcs</span>@if(!$loop->last), @endif
-                                        @endforeach
+                            @foreach($details as $d)
+                            <span class="text-xs text-slate-400">Batch {{ $d->barangStok?->batch_number ?? 'N/A' }}: {{ $d->jumlah }} {{ $satuan }}</span>@if(!$loop->last), @endif
+                            @endforeach
                                     </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex flex-col items-end">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700">
-                                            {{ $totalJumlah }}
-                                        </span>
-                                        @if($isi > 1 && $totalJumlah >= $isi)
-                                            <span class="text-xs text-slate-400 mt-1">
-                                                {{ intdiv($totalJumlah, $isi) }} {{ $satuan }}
-                                                @if($totalJumlah % $isi > 0)
-                                                    + {{ $totalJumlah % $isi }} pcs
-                                                @endif
-                                            </span>
-                                        @endif
-                                    </div>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700">
+                                        {{ $totalJumlah }} {{ $satuan }}
+                                    </span>
                                 </td>
                             </tr>
                             @endforeach

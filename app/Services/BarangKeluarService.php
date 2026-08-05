@@ -52,16 +52,6 @@ class BarangKeluarService
                     }
                 );
 
-                $konversi = '';
-                if ($barang->isi && $barang->isi > 1) {
-                    $kemasan = floor($totalDiambil / $barang->isi);
-                    $sisaPcs = $totalDiambil % $barang->isi;
-                    if ($kemasan > 0) {
-                        $konversi = " ({$kemasan} {$barang->satuan}";
-                        $konversi .= $sisaPcs > 0 ? " + {$sisaPcs} pcs)" : ')';
-                    }
-                }
-
                 activity()
                     ->performedOn($barang)
                     ->causedBy(auth()->user())
@@ -73,7 +63,7 @@ class BarangKeluarService
                         'jenis_keluar' => $barangKeluar->jenis_keluar,
                         'tipe' => 'keluar',
                     ])
-                    ->log("Stok barang '{$barang->nama_barang}' berkurang {$totalDiambil} pcs{$konversi} melalui {$barangKeluar->no_keluar}");
+                    ->log("Stok barang '{$barang->nama_barang}' berkurang {$totalDiambil} {$barang->satuan} melalui {$barangKeluar->no_keluar}");
             }
 
             return $barangKeluar->load(['user', 'detailBarangKeluars.barang']);

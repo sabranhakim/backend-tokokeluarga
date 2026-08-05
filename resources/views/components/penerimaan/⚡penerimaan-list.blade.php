@@ -124,7 +124,6 @@ new class extends Component {
             <option value="">Semua Status</option>
             <option value="pending">Pending</option>
             <option value="verified">Verified</option>
-            <option value="rejected">Ditolak</option>
         </select>
 
         <input wire:model.live="filterDateFrom" type="date" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Dari Tanggal">
@@ -167,10 +166,6 @@ new class extends Component {
                             @if($penerimaan->status_verifikasi == 'verified')
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
                                     Verified
-                                </span>
-                            @elseif($penerimaan->status_verifikasi == 'rejected')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
-                                    Ditolak
                                 </span>
                             @else
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">

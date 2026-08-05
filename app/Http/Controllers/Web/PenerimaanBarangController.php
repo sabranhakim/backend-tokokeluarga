@@ -36,23 +36,6 @@ class PenerimaanBarangController extends Controller
         return view('penerimaan.trash');
     }
 
-    public function reject(Request $request, PenerimaanBarang $penerimaanBarang)
-    {
-        try {
-            $request->validate([
-                'catatan_verifikasi' => 'required|string|max:1000',
-            ]);
-
-            $this->penerimaanService->reject($penerimaanBarang->id, $request->input('catatan_verifikasi'));
-
-            return redirect()->back()
-                ->with('success', 'Penerimaan barang berhasil ditolak.');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal menolak penerimaan: '.$e->getMessage());
-        }
-    }
-
     public function verify(Request $request, PenerimaanBarang $penerimaanBarang)
     {
         try {
