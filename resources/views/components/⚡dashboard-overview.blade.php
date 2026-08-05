@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Barang;
+use App\Models\BarangKeluar;
 use App\Models\PenerimaanBarang;
 use App\Models\Supplier;
 use Spatie\Activitylog\Models\Activity;
@@ -15,8 +16,11 @@ new class extends Component
             'totalBarang' => Barang::count(),
             'totalSupplier' => Supplier::count(),
             'totalPenerimaan' => PenerimaanBarang::count(),
+            'totalBarangKeluar' => BarangKeluar::count(),
+            'barangKeluarHariIni' => BarangKeluar::whereDate('tgl_keluar', today())->count(),
             'stokMenipisCount' => Barang::whereColumn('stok', '<=', 'stok_minimal')->count(),
             'penerimaanTerbaru' => PenerimaanBarang::with('supplier', 'user')->latest()->take(5)->get(),
+            'barangKeluarTerbaru' => BarangKeluar::with('user', 'detailBarangKeluars.barang')->latest()->take(5)->get(),
             'stokKritis' => Barang::whereColumn('stok', '<=', 'stok_minimal')->orderBy('stok', 'asc')->take(5)->get(),
             'aktivitasTerbaru' => Activity::with('causer')->latest()->take(5)->get(),
             'unreadNotifications' => Auth::user()->unreadNotifications->count(),
@@ -40,7 +44,7 @@ new class extends Component
 
 <div class="p-6 space-y-8">
     <!-- Top Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <!-- Total Barang -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group">
             <div class="absolute right-0 top-0 -mr-4 -mt-4 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
@@ -80,6 +84,21 @@ new class extends Component
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Barang Keluar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group">
+            <div class="absolute right-0 top-0 -mr-4 -mt-4 w-24 h-24 bg-orange-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+            <div class="relative z-10">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Barang Keluar</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-slate-800">{{ number_format($totalBarangKeluar) }}</h3>
+                    <div class="p-2 bg-orange-100 rounded-lg text-orange-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ number_format($barangKeluarHariIni) }} transaksi hari ini</p>
             </div>
         </div>
 
@@ -244,6 +263,51 @@ new class extends Component
                     @empty
                     <tr>
                         <td colspan="6" class="px-6 py-10 text-center text-slate-400 italic text-sm">Belum ada riwayat penerimaan.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Barang Keluar Terbaru -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Transaksi Barang Keluar Terbaru</h3>
+            <a href="{{ route('barang-keluar.index') }}" class="text-xs font-bold text-blue-600 hover:text-blue-800">Daftar Barang Keluar</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-slate-50/50">
+                        <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">No. Keluar</th>
+                        <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Jenis</th>
+                        <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal</th>
+                        <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Petugas</th>
+                        <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Item</th>
+                        <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($barangKeluarTerbaru as $barangKeluar)
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-6 py-4 text-sm font-mono font-bold text-slate-700">{{ $barangKeluar->no_keluar }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-100 uppercase">{{ $barangKeluar->jenis_keluar_label }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ $barangKeluar->tgl_keluar->format('d/m/Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ $barangKeluar->user->name }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-sm font-black text-slate-800">{{ $barangKeluar->detailBarangKeluars->count() }}</span>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase"> item</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="{{ route('barang-keluar.show', $barangKeluar) }}" class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-tighter">Detail</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-slate-400 italic text-sm">Belum ada riwayat barang keluar.</td>
                     </tr>
                     @endforelse
                 </tbody>
