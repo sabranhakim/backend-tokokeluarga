@@ -23,13 +23,13 @@ new class extends Component {
 
     // Form fields
     public $barangId;
-    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $isi = 1, $harga_beli = 0, $harga_jual = 0, $stok = 0, $stok_minimal = 10;
+    public $kode_barang, $nama_barang, $kategori_id, $supplier_id, $satuan, $isi = 1, $harga_beli, $harga_jual, $stok = 0, $stok_minimal = 10;
 
     protected $rules = [
         'kode_barang' => 'required|unique:barangs,kode_barang',
         'nama_barang' => 'required',
-        'kategori_id' => 'required|exists:kategoris,id',
-        'supplier_id' => 'nullable|exists:suppliers,id',
+        'kategori_id' => 'required|exists:kategoris,id_kategori',
+        'supplier_id' => 'nullable|exists:suppliers,id_supplier',
         'satuan' => 'required',
         'isi' => 'required|integer|min:1',
         'harga_beli' => 'required|numeric|min:0',
@@ -121,19 +121,39 @@ new class extends Component {
 
     public function generateKodeBarang()
     {
-        $lastBarang = Barang::withoutGlobalScope('active')->orderBy('created_at', 'desc')->first();
+        $maxNumber = (int) Barang::withoutGlobalScope('active')
+            ->withTrashed()
+            ->get('kode_barang')
+            ->map(function ($barang) {
+                preg_match('/BRG-(\d+)/', $barang->kode_barang, $matches);
+                return isset($matches[1]) ? (int) $matches[1] : 0;
+            })
+            ->max();
 
-        if (!$lastBarang) {
-            $this->kode_barang = 'BRG-0001';
+        $this->kode_barang = 'BRG-' . str_pad((string) ($maxNumber + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    public function ensureUniqueKodeBarang()
+    {
+        if (empty(trim($this->kode_barang ?? ''))) {
+            $this->generateKodeBarang();
             return;
         }
 
-        // Extract number from BRG-XXXX
-        $lastCode = $lastBarang->kode_barang;
-        $number = (int) substr($lastCode, 4);
-        $newNumber = $number + 1;
+        preg_match('/BRG-(\d+)/', $this->kode_barang, $matches);
+        if (!isset($matches[1])) {
+            $this->generateKodeBarang();
+            return;
+        }
 
-        $this->kode_barang = 'BRG-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        $next = (int) $matches[1];
+        while (Barang::withoutGlobalScope('active')
+            ->withTrashed()
+            ->where('kode_barang', 'BRG-' . str_pad((string) $next, 3, '0', STR_PAD_LEFT))
+            ->exists()) {
+            $next++;
+        }
+        $this->kode_barang = 'BRG-' . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     public function resetFields()
@@ -145,8 +165,8 @@ new class extends Component {
         $this->supplier_id = '';
         $this->satuan = '';
         $this->isi = 1;
-        $this->harga_beli = 0;
-        $this->harga_jual = 0;
+        $this->harga_beli = null;
+        $this->harga_jual = null;
         $this->stok = 0;
         $this->stok_minimal = 10;
         $this->isEdit = false;
@@ -159,7 +179,7 @@ new class extends Component {
             return;
         }
         $barang = Barang::withoutGlobalScope('active')->findOrFail($id);
-        $this->barangId = $barang->id;
+        $this->barangId = $barang->getKey();
         $this->kode_barang = $barang->kode_barang;
         $this->nama_barang = $barang->nama_barang;
         $this->kategori_id = $barang->kategori_id;
@@ -180,9 +200,17 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menyimpan data ini.');
             return;
         }
+
+        if (!$this->isEdit) {
+            $this->ensureUniqueKodeBarang();
+        }
+
+        $this->harga_beli = is_numeric($this->harga_beli) ? (int) $this->harga_beli : $this->harga_beli;
+        $this->harga_jual = is_numeric($this->harga_jual) ? (int) $this->harga_jual : $this->harga_jual;
+
         $validationRules = $this->rules;
         if ($this->isEdit) {
-            $validationRules['kode_barang'] = 'required|unique:barangs,kode_barang,' . $this->barangId;
+            $validationRules['kode_barang'] = 'required|unique:barangs,kode_barang,' . $this->barangId . ',id_barang';
         }
 
         $validated = $this->validate($validationRules);
@@ -246,14 +274,14 @@ new class extends Component {
         <select wire:model.live="filterKategori" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             <option value="">Semua Kategori</option>
             @foreach($kategoris as $kategori)
-                <option value="{{ $kategori->id }}">{{ $kategori->nama_kategori }}</option>
+                <option value="{{ $kategori->getKey() }}">{{ $kategori->nama_kategori }}</option>
             @endforeach
         </select>
 
         <select wire:model.live="filterSupplier" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             <option value="">Semua Supplier</option>
             @foreach($suppliers as $supplier)
-                <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                <option value="{{ $supplier->getKey() }}">{{ $supplier->nama_supplier }}</option>
             @endforeach
         </select>
 
@@ -297,7 +325,7 @@ new class extends Component {
                     @forelse($barangs as $barang)
                     <tr class="hover:bg-slate-50 transition-colors {{ !$barang->is_active ? 'bg-slate-50/50' : '' }}">
                         <td class="px-6 py-4">
-                            <button wire:click="toggleActive('{{ $barang->id }}')" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $barang->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                            <button wire:click="toggleActive('{{ $barang->getKey() }}')" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $barang->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
                                 <span class="sr-only">Toggle Active</span>
                                 <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $barang->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
                             </button>
@@ -333,24 +361,24 @@ new class extends Component {
                         </td>
                         <td class="px-6 py-4 text-center">
                             @php
-                                $batchCount = \App\Models\BarangStok::where('barang_id', $barang->id)->where('stok', '>', 0)->count();
+                                $batchCount = \App\Models\BarangStok::where('barang_id', $barang->getKey())->where('stok', '>', 0)->count();
                             @endphp
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border {{ $batchCount > 0 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-400 border-slate-200' }}">
                                 {{ $batchCount }} batch
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
-                            <a href="{{ route('barang.show', $barang->id) }}" class="text-slate-600 hover:text-blue-600 font-medium" title="Detail Barang">
+                            <a href="{{ route('barang.show', $barang->getKey()) }}" class="text-slate-600 hover:text-blue-600 font-medium" title="Detail Barang">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </a>
-                            <a href="{{ route('barang.history', $barang->id) }}" class="text-blue-600 hover:text-blue-700 font-medium" title="Riwayat Stok">
+                            <a href="{{ route('barang.history', $barang->getKey()) }}" class="text-blue-600 hover:text-blue-700 font-medium" title="Riwayat Stok">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </a>
                             @can('manage barang')
-                            <button wire:click="edit('{{ $barang->id }}')" class="text-amber-600 hover:text-amber-700 font-medium">
+                            <button wire:click="edit('{{ $barang->getKey() }}')" class="text-amber-600 hover:text-amber-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
-                            <button wire:click="delete('{{ $barang->id }}')" wire:confirm="Yakin ingin menghapus barang ini?" class="text-red-600 hover:text-red-700 font-medium">
+                            <button wire:click="delete('{{ $barang->getKey() }}')" wire:confirm="Yakin ingin menghapus barang ini?" class="text-red-600 hover:text-red-700 font-medium">
                                 <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                             @else
@@ -413,7 +441,10 @@ new class extends Component {
                     <!-- Kode Barang -->
                     <div class="space-y-1">
                         <label class="block text-sm font-bold text-slate-700">Kode Barang</label>
-                        <input wire:model="kode_barang" type="text" placeholder="Contoh: BRG-001" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('kode_barang') border-red-500 @enderror">
+                        <div class="relative">
+                            <input wire:model="kode_barang" type="text" readonly placeholder="Otomatis" class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed outline-none">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-600 font-semibold">Auto</span>
+                        </div>
                         @error('kode_barang') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -423,7 +454,7 @@ new class extends Component {
                         <select wire:model="kategori_id" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('kategori_id') border-red-500 @enderror">
                             <option value="">Pilih Kategori</option>
                             @foreach($kategoris as $kategori)
-                                <option value="{{ $kategori->id }}">{{ $kategori->nama_kategori }}</option>
+                                <option value="{{ $kategori->getKey() }}">{{ $kategori->nama_kategori }}</option>
                             @endforeach
                         </select>
                         @error('kategori_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
@@ -435,7 +466,7 @@ new class extends Component {
                         <select wire:model="supplier_id" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('supplier_id') border-red-500 @enderror">
                             <option value="">Pilih Supplier</option>
                             @foreach($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                                <option value="{{ $supplier->getKey() }}">{{ $supplier->nama_supplier }}</option>
                             @endforeach
                         </select>
                         @error('supplier_id') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
@@ -483,7 +514,7 @@ new class extends Component {
                     <!-- Stok Minimal -->
                     <div class="space-y-1">
                         <label class="block text-sm font-bold text-slate-700">Batas Stok Minimal (Alert)</label>
-                        <input wire:model="stok_minimal" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok_minimal') border-red-500 @enderror">
+                        <input wire:model="stok_minimal" type="number" min="0" step="1" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('stok_minimal') border-red-500 @enderror">
                         @error('stok_minimal') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -492,7 +523,7 @@ new class extends Component {
                         <label class="block text-sm font-bold text-slate-700">Harga Beli</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 font-bold">Rp</span>
-                            <input wire:model="harga_beli" type="number" class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('harga_beli') border-red-500 @enderror">
+                            <input wire:model="harga_beli" type="number" min="0" step="1" placeholder="0" class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('harga_beli') border-red-500 @enderror">
                         </div>
                         @error('harga_beli') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>
@@ -502,7 +533,7 @@ new class extends Component {
                         <label class="block text-sm font-bold text-slate-700">Harga Jual</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 font-bold">Rp</span>
-                            <input wire:model="harga_jual" type="number" class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('harga_jual') border-red-500 @enderror">
+                            <input wire:model="harga_jual" type="number" min="0" step="1" placeholder="0" class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('harga_jual') border-red-500 @enderror">
                         </div>
                         @error('harga_jual') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                     </div>

@@ -9,13 +9,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detail_barang_keluars', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('barang_keluar_id')->constrained('barang_keluars')->cascadeOnDelete();
-            $table->foreignUuid('barang_id')->constrained('barangs');
-            $table->foreignUuid('barang_stok_id')->nullable()->constrained('barang_stoks')->nullOnDelete();
+            $table->unsignedInteger('id_detail_barang_keluar')->autoIncrement()->primary();
+            $table->unsignedInteger('barang_keluar_id');
+            $table->unsignedInteger('barang_id');
+            $table->unsignedInteger('barang_stok_id')->nullable();
             $table->integer('jumlah');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('barang_keluar_id')->references('id_barang_keluar')->on('barang_keluars')->onDelete('cascade');
+            $table->foreign('barang_id')->references('id_barang')->on('barangs');
+            $table->foreign('barang_stok_id')->references('id_barang_stok')->on('barang_stoks')->onDelete('set null');
         });
     }
 

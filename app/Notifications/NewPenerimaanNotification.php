@@ -38,7 +38,7 @@ class NewPenerimaanNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'penerimaan_id' => $this->penerimaan->id,
+            'penerimaan_id' => $this->penerimaan->getKey(),
             'no_terima' => $this->penerimaan->no_terima,
             'supplier_nama' => $this->penerimaan->supplier->nama_supplier,
             'petugas_nama' => $this->penerimaan->user->name,

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Barang;
 use App\Models\BarangStok;
 use App\Models\StockMovement;
+use Illuminate\Support\Str;
 
 class StockHelperService
 {
@@ -16,10 +17,10 @@ class StockHelperService
      */
     public function reduce(Barang $barang, int $jumlah, string $reason, int $userId, object $reference, string $type = 'out', ?callable $onBatchTaken = null): int
     {
-        $barang = Barang::where('id', $barang->id)->lockForUpdate()->firstOrFail();
+        $barang = Barang::where('id_barang', $barang->getKey())->lockForUpdate()->firstOrFail();
         $sisaKurang = $jumlah;
 
-        $batches = BarangStok::where('barang_id', $barang->id)
+        $batches = BarangStok::where('barang_id', $barang->getKey())
             ->where('stok', '>', 0)
             ->orderBy('tgl_kadaluarsa', 'asc')
             ->orderBy('tgl_masuk', 'asc')
@@ -52,15 +53,15 @@ class StockHelperService
             }
 
             StockMovement::create([
-                'barang_id' => $barang->id,
-                'barang_stok_id' => $batch->id,
+                'barang_id' => $barang->getKey(),
+                'barang_stok_id' => $batch->getKey(),
                 'user_id' => $userId,
                 'type' => $type,
                 'quantity' => $ambil,
                 'before_quantity' => $stokSebelum,
                 'after_quantity' => $stokSebelum - $ambil,
-                'reason' => $reason,
-                'reference_id' => $reference->id,
+                'reason' => Str::limit($reason, 50, ''),
+                'reference_id' => $reference->getKey(),
                 'reference_type' => get_class($reference),
             ]);
         }
@@ -78,7 +79,7 @@ class StockHelperService
         $stokSebelum = $barang->stok;
 
         $barangStok = BarangStok::create([
-            'barang_id' => $barang->id,
+            'barang_id' => $barang->getKey(),
             'batch_number' => $batchNumber,
             'stok' => $jumlah,
             'tgl_masuk' => $tglMasuk,
@@ -88,15 +89,15 @@ class StockHelperService
         $barang->increment('stok', $jumlah);
 
         StockMovement::create([
-            'barang_id' => $barang->id,
-            'barang_stok_id' => $barangStok->id,
+            'barang_id' => $barang->getKey(),
+            'barang_stok_id' => $barangStok->getKey(),
             'user_id' => $userId,
             'type' => $type,
             'quantity' => $jumlah,
             'before_quantity' => $stokSebelum,
             'after_quantity' => $barang->stok,
-            'reason' => $reason,
-            'reference_id' => $reference->id,
+            'reason' => Str::limit($reason, 50, ''),
+            'reference_id' => $reference->getKey(),
             'reference_type' => get_class($reference),
         ]);
 

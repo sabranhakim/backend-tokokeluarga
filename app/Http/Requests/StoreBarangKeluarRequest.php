@@ -18,7 +18,7 @@ class StoreBarangKeluarRequest extends FormRequest
             'jenis_keluar' => 'nullable|in:penjualan,kerusakan,kadaluarsa,pemakaian_internal',
             'keterangan' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.barang_id' => 'required|exists:barangs,id|distinct',
+            'items.*.barang_id' => 'required|exists:barangs,id_barang|distinct',
             'items.*.jumlah' => 'required|integer|min:1',
         ];
     }

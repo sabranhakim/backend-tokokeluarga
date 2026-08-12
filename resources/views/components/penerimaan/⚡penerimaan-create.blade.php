@@ -22,11 +22,11 @@ new class extends Component {
 
     protected $rules = [
         'no_terima' => 'nullable|string',
-        'supplier_id' => 'required|exists:suppliers,id',
+        'supplier_id' => 'required|exists:suppliers,id_supplier',
         'tgl_terima' => 'required|date',
         'foto_bon' => 'nullable|image|max:5120',
         'items' => 'required|array|min:1',
-        'items.*.barang_id' => 'required|exists:barangs,id|distinct',
+        'items.*.barang_id' => 'required|exists:barangs,id_barang|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
         'items.*.batch_number' => 'nullable|string|max:100',
         'items.*.tgl_kadaluarsa' => 'nullable|date',
@@ -99,10 +99,10 @@ new class extends Component {
 
             if ($this->foto_bon) {
                 $ext = $this->foto_bon->getClientOriginalExtension();
-                $tempPath = sys_get_temp_dir() . '/penerimaan_foto_' . $penerimaan->id . '_' . time() . '.' . $ext;
+                $tempPath = sys_get_temp_dir() . '/penerimaan_foto_' . $penerimaan->getKey() . '_' . time() . '.' . $ext;
                 copy($this->foto_bon->getRealPath(), $tempPath);
 
-                ProcessPenerimaanFotoJob::dispatch($penerimaan->id, $tempPath);
+                ProcessPenerimaanFotoJob::dispatch($penerimaan->getKey(), $tempPath);
             }
 
             $msg = $this->foto_bon
@@ -202,7 +202,7 @@ new class extends Component {
                                 <select x-ref="select" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all @error('supplier_id') border-red-500 @enderror">
                                     <option value="">Pilih Supplier</option>
                                     @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                                        <option value="{{ $supplier->getKey() }}">{{ $supplier->nama_supplier }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -274,7 +274,7 @@ new class extends Component {
 
                     <div class="p-6">
                         <div class="space-y-4">
-                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1])->toJson(); @endphp
+                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->getKey(), 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1])->toJson(); @endphp
                             @foreach($items as $index => $item)
                             <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">

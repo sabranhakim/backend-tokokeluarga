@@ -36,8 +36,8 @@ class StockOpnameService
                 $stokFisik = (int) $item['stok_fisik'];
 
                 DetailStockOpname::create([
-                    'stock_opname_id' => $opname->id,
-                    'barang_id' => $barang->id,
+                    'stock_opname_id' => $opname->getKey(),
+                    'barang_id' => $barang->getKey(),
                     'stok_sistem' => $stokSistem,
                     'stok_fisik' => $stokFisik,
                     'selisih' => $stokFisik - $stokSistem,

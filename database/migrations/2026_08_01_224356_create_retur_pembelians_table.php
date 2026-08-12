@@ -12,14 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('retur_pembelians', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('no_retur');
-            $table->foreignUuid('supplier_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedInteger('id_retur_pembelian')->autoIncrement()->primary();
+            $table->string('no_retur', 20);
+            $table->unsignedInteger('supplier_id')->nullable();
+            $table->foreignId('user_id')->nullable();
             $table->date('tgl_retur');
-            $table->string('keterangan')->nullable();
+            $table->string('keterangan', 30)->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('supplier_id')->references('id_supplier')->on('suppliers')->onDelete('set null');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
 
             $table->index('no_retur');
             $table->index('tgl_retur');

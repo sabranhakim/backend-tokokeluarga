@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,10 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DetailPenerimaan extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected $primaryKey = 'id_detail_penerimaan';
 
     protected $fillable = [
-        'id',
         'penerimaan_barang_id',
         'barang_id',
         'jumlah',
@@ -27,16 +27,16 @@ class DetailPenerimaan extends Model
 
     public function penerimaanBarang(): BelongsTo
     {
-        return $this->belongsTo(PenerimaanBarang::class);
+        return $this->belongsTo(PenerimaanBarang::class, 'penerimaan_barang_id', 'id_penerimaan_barang');
     }
 
     public function barang(): BelongsTo
     {
-        return $this->belongsTo(Barang::class);
+        return $this->belongsTo(Barang::class, 'barang_id', 'id_barang');
     }
 
     public function barangStoks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(BarangStok::class);
+        return $this->hasMany(BarangStok::class, 'detail_penerimaan_id', 'id_detail_penerimaan');
     }
 }

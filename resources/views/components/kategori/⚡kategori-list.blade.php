@@ -78,7 +78,7 @@ new class extends Component {
             return;
         }
         $kategori = Kategori::withoutGlobalScope('active')->findOrFail($id);
-        $this->kategoriId = $kategori->id;
+        $this->kategoriId = $kategori->getKey();
         $this->nama_kategori = $kategori->nama_kategori;
         $this->isEdit = true;
         $this->showModal = true;
@@ -92,7 +92,7 @@ new class extends Component {
         }
         $validationRules = $this->rules;
         if ($this->isEdit) {
-            $validationRules['nama_kategori'] = 'required|min:3|unique:kategoris,nama_kategori,' . $this->kategoriId;
+            $validationRules['nama_kategori'] = 'required|min:3|unique:kategoris,nama_kategori,' . $this->kategoriId . ',id_kategori';
         }
 
         $validated = $this->validate($validationRules);
@@ -172,7 +172,7 @@ new class extends Component {
                         @foreach($chunk as $kategori)
                         <tr class="hover:bg-slate-50 transition-colors {{ !$kategori->is_active ? 'bg-slate-50/50' : '' }}">
                             <td class="px-6 py-4 text-center">
-                                <button wire:click="toggleActive('{{ $kategori->id }}')" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $kategori->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
+                                <button wire:click="toggleActive('{{ $kategori->getKey() }}')" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 {{ $kategori->is_active ? 'bg-blue-600' : 'bg-slate-200' }}">
                                     <span class="sr-only">Toggle Active</span>
                                     <span aria-hidden="true" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $kategori->is_active ? 'translate-x-4' : 'translate-x-0' }}"></span>
                                 </button>
@@ -180,10 +180,10 @@ new class extends Component {
                             <td class="px-6 py-4 font-medium {{ $kategori->is_active ? 'text-slate-900' : 'text-slate-400 line-through' }}">{{ $kategori->nama_kategori }}</td>
                             <td class="px-6 py-4 text-right space-x-2">
                                 @can('manage kategori')
-                                <button wire:click="edit('{{ $kategori->id }}')" class="text-amber-600 hover:text-amber-700 font-medium" title="Edit">
+                                <button wire:click="edit('{{ $kategori->getKey() }}')" class="text-amber-600 hover:text-amber-700 font-medium" title="Edit">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </button>
-                                <button wire:click="delete('{{ $kategori->id }}')" wire:confirm="Yakin ingin menghapus kategori ini?" class="text-red-600 hover:text-red-700 font-medium" title="Hapus">
+                                <button wire:click="delete('{{ $kategori->getKey() }}')" wire:confirm="Yakin ingin menghapus kategori ini?" class="text-red-600 hover:text-red-700 font-medium" title="Hapus">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
                                 @else

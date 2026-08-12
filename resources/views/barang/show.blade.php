@@ -3,5 +3,5 @@
         Detail Barang: {{ $barang->nama_barang }}
     </x-slot>
 
-    <livewire:barang.barang-detail :barang-id="$barang->id" />
+    <livewire:barang.barang-detail :barang-id="$barang->getKey()" />
 </x-app-layout>

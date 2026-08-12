@@ -112,7 +112,7 @@ new class extends Component {
         <select wire:model.live="filterBarang" class="px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm bg-white">
             <option value="">Semua Barang</option>
             @foreach($barangs as $barang)
-                <option value="{{ $barang->id }}">{{ $barang->kode_barang }} - {{ $barang->nama_barang }}</option>
+                <option value="{{ $barang->getKey() }}">{{ $barang->kode_barang }} - {{ $barang->nama_barang }}</option>
             @endforeach
         </select>
 

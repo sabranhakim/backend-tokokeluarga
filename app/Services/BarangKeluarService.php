@@ -44,9 +44,9 @@ class BarangKeluarService
                     'out',
                     function ($batch, $ambil) use ($barangKeluar, $item) {
                         DetailBarangKeluar::create([
-                            'barang_keluar_id' => $barangKeluar->id,
+                            'barang_keluar_id' => $barangKeluar->getKey(),
                             'barang_id' => $item['barang_id'],
-                            'barang_stok_id' => $batch->id,
+                            'barang_stok_id' => $batch->getKey(),
                             'jumlah' => $ambil,
                         ]);
                     }

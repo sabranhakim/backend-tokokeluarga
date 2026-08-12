@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BarangStok extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected $primaryKey = 'id_barang_stok';
 
     protected $fillable = [
         'barang_id',
@@ -30,21 +31,21 @@ class BarangStok extends Model
 
     public function barang(): BelongsTo
     {
-        return $this->belongsTo(Barang::class);
+        return $this->belongsTo(Barang::class, 'barang_id', 'id_barang');
     }
 
     public function detailPenerimaan(): BelongsTo
     {
-        return $this->belongsTo(DetailPenerimaan::class);
+        return $this->belongsTo(DetailPenerimaan::class, 'detail_penerimaan_id', 'id_detail_penerimaan');
     }
 
     public function penerimaanBarang(): BelongsTo
     {
-        return $this->belongsTo(PenerimaanBarang::class);
+        return $this->belongsTo(PenerimaanBarang::class, 'penerimaan_barang_id', 'id_penerimaan_barang');
     }
 
     public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(StockMovement::class);
+        return $this->hasMany(StockMovement::class, 'barang_stok_id', 'id_barang_stok');
     }
 }

@@ -12,13 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('suppliers', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('nama_supplier');
+            $table->unsignedInteger('id_supplier')->autoIncrement()->primary();
+            $table->boolean('is_active')->default(true);
+            $table->string('nama_supplier', 30);
             $table->text('alamat')->nullable();
-            $table->string('no_telp')->nullable();
+            $table->string('no_telp', 15)->nullable();
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('nama_supplier');
+            $table->index('deleted_at');
         });
     }
+
     /**
      * Reverse the migrations.
      */

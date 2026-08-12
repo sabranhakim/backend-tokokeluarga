@@ -12,14 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detail_stock_opnames', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('stock_opname_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('barang_id')->constrained()->cascadeOnDelete();
+            $table->unsignedInteger('id_detail_stock_opname')->autoIncrement()->primary();
+            $table->unsignedInteger('stock_opname_id');
+            $table->unsignedInteger('barang_id');
             $table->integer('stok_sistem');
             $table->integer('stok_fisik');
             $table->integer('selisih');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('stock_opname_id')->references('id_stock_opname')->on('stock_opnames')->onDelete('cascade');
+            $table->foreign('barang_id')->references('id_barang')->on('barangs')->onDelete('cascade');
 
             $table->index(['stock_opname_id', 'barang_id']);
         });

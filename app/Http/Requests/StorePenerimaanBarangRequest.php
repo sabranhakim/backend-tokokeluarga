@@ -14,9 +14,10 @@ class StorePenerimaanBarangRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($this->input('id')) {
+        if ($this->input('no_terima')) {
             $existing = PenerimaanBarang::with(['supplier', 'user', 'detailPenerimaans.barang'])
-                ->find($this->input('id'));
+                ->where('no_terima', $this->input('no_terima'))
+                ->first();
 
             if ($existing) {
                 throw new HttpResponseException(response()->json([
@@ -44,16 +45,14 @@ class StorePenerimaanBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'nullable|uuid|unique:penerimaan_barangs,id',
             'no_terima' => 'nullable|string',
-            'supplier_id' => 'required|exists:suppliers,id',
+            'supplier_id' => 'required|exists:suppliers,id_supplier',
             'tgl_terima' => 'required|date',
             'foto_bon' => 'nullable|image|max:5120|mimes:jpg,png,jpeg', // Max 5MB
             'items' => 'required|array|min:1',
-            'items.*.id' => 'nullable|uuid|unique:detail_penerimaans,id',
-            'items.*.barang_id' => 'required|exists:barangs,id|distinct',
+            'items.*.barang_id' => 'required|exists:barangs,id_barang|distinct',
             'items.*.jumlah' => 'required|integer|min:1',
-            'items.*.batch_number' => 'nullable|string|max:100',
+            'items.*.batch_number' => 'nullable|string|max:20',
             'items.*.tgl_kadaluarsa' => 'nullable|date',
         ];
     }

@@ -12,14 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('retur_penjualans', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('no_retur');
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedInteger('id_retur_penjualan')->autoIncrement()->primary();
+            $table->string('no_retur', 20);
+            $table->foreignId('user_id')->nullable();
             $table->date('tgl_retur');
-            $table->string('nama_pelanggan')->nullable();
-            $table->string('keterangan')->nullable();
+            $table->string('nama_pelanggan', 30)->nullable();
+            $table->string('keterangan', 30)->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
 
             $table->index('no_retur');
             $table->index('tgl_retur');

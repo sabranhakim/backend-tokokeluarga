@@ -12,13 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detail_retur_pembelians', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('retur_pembelian_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('barang_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('barang_stok_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedInteger('id_detail_retur_pembelian')->autoIncrement()->primary();
+            $table->unsignedInteger('retur_pembelian_id');
+            $table->unsignedInteger('barang_id');
+            $table->unsignedInteger('barang_stok_id')->nullable();
             $table->integer('jumlah');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('retur_pembelian_id')->references('id_retur_pembelian')->on('retur_pembelians')->onDelete('cascade');
+            $table->foreign('barang_id')->references('id_barang')->on('barangs')->onDelete('cascade');
+            $table->foreign('barang_stok_id')->references('id_barang_stok')->on('barang_stoks')->onDelete('set null');
 
             $table->index(['retur_pembelian_id', 'barang_id']);
         });

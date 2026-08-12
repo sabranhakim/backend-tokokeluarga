@@ -10,7 +10,7 @@
                 Kembali ke Daftar
             </a>
             @if($stockOpname->status === 'draft')
-            <livewire:stock-opname.stock-opname-apply :stockOpnameId="$stockOpname->id" />
+            <livewire:stock-opname.stock-opname-apply :stockOpnameId="$stockOpname->getKey()" />
             @endif
         </div>
 

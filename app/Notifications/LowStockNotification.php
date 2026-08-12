@@ -38,7 +38,7 @@ class LowStockNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'barang_id' => $this->barang->id,
+            'barang_id' => $this->barang->getKey(),
             'nama_barang' => $this->barang->nama_barang,
             'kode_barang' => $this->barang->kode_barang,
             'stok' => $this->barang->stok,

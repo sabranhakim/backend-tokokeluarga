@@ -21,7 +21,7 @@ new class extends Component {
 
         foreach (Barang::orderBy('nama_barang')->get() as $barang) {
             $this->items[] = [
-                'barang_id' => $barang->id,
+                'barang_id' => $barang->getKey(),
                 'kode_barang' => $barang->kode_barang,
                 'nama_barang' => $barang->nama_barang,
                 'satuan' => $barang->satuan,

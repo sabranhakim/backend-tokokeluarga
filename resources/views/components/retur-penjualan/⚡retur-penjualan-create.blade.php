@@ -18,7 +18,7 @@ new class extends Component {
         'nama_pelanggan' => 'nullable|string|max:255',
         'keterangan' => 'nullable|string|max:1000',
         'items' => 'required|array|min:1',
-        'items.*.barang_id' => 'required|exists:barangs,id|distinct',
+        'items.*.barang_id' => 'required|exists:barangs,id_barang|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
     ];
 
@@ -175,7 +175,7 @@ new class extends Component {
 
                     <div class="p-6">
                         <div class="space-y-4">
-                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->id, 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'stok' => $b->stok])->toJson(); @endphp
+                            @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->getKey(), 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'stok' => $b->stok])->toJson(); @endphp
                             @foreach($items as $index => $item)
                             <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">

@@ -49,14 +49,14 @@ class PenerimaanBarangLargeSeeder extends Seeder
         for ($i = 0; $i < $total / $batchSize; $i++) {
             PenerimaanBarang::factory($batchSize)
                 ->sequence(fn ($sequence) => [
-                    'supplier_id' => $suppliers->random()->id,
+                    'supplier_id' => $suppliers->random()->getKey(),
                     'user_id' => $users->random()->id,
                 ])
                 ->has(
                     DetailPenerimaan::factory()
                         ->count(rand(1, 5))
                         ->state(function (array $attributes, PenerimaanBarang $penerimaan) use ($barangs) {
-                            return ['barang_id' => $barangs->random()->id];
+                            return ['barang_id' => $barangs->random()->getKey()];
                         }),
                     'detailPenerimaans'
                 )

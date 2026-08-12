@@ -116,7 +116,7 @@ new class extends Component {
         <select wire:model.live="filterSupplier" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             <option value="">Semua Supplier</option>
             @foreach($suppliers as $supplier)
-                <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                <option value="{{ $supplier->getKey() }}">{{ $supplier->nama_supplier }}</option>
             @endforeach
         </select>
 
@@ -179,7 +179,7 @@ new class extends Component {
                             </a>
                             @if($penerimaan->status_verifikasi == 'pending')
                                 @can('manage penerimaan')
-                                <button wire:click="delete('{{ $penerimaan->id }}')" wire:confirm="Yakin ingin menghapus data ini?" class="text-red-600 hover:text-red-700 font-bold text-sm" title="Hapus">
+                                <button wire:click="delete('{{ $penerimaan->getKey() }}')" wire:confirm="Yakin ingin menghapus data ini?" class="text-red-600 hover:text-red-700 font-bold text-sm" title="Hapus">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
                                 @endcan

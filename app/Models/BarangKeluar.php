@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,10 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BarangKeluar extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected $primaryKey = 'id_barang_keluar';
 
     protected $fillable = [
-        'id',
         'no_keluar',
         'user_id',
         'tgl_keluar',
@@ -40,11 +40,11 @@ class BarangKeluar extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     public function detailBarangKeluars(): HasMany
     {
-        return $this->hasMany(DetailBarangKeluar::class);
+        return $this->hasMany(DetailBarangKeluar::class, 'barang_keluar_id', 'id_barang_keluar');
     }
 }

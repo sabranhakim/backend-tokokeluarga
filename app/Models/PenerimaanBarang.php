@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,10 +12,11 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class PenerimaanBarang extends Model
 {
-    use HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
+
+    protected $primaryKey = 'id_penerimaan_barang';
 
     protected $fillable = [
-        'id',
         'no_terima',
         'supplier_id',
         'user_id',
@@ -40,18 +40,18 @@ class PenerimaanBarang extends Model
 
     public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class)->withTrashed()->withDefault([
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'id_supplier')->withTrashed()->withDefault([
             'nama_supplier' => 'Supplier telah dihapus permanen',
         ]);
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     public function detailPenerimaans(): HasMany
     {
-        return $this->hasMany(DetailPenerimaan::class);
+        return $this->hasMany(DetailPenerimaan::class, 'penerimaan_barang_id', 'id_penerimaan_barang');
     }
 }

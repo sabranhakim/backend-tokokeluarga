@@ -3,5 +3,5 @@
         Riwayat Stok: {{ $barang->nama_barang }}
     </x-slot>
 
-    <livewire:barang.barang-history :barang-id="$barang->id" />
+    <livewire:barang.barang-history :barang-id="$barang->getKey()" />
 </x-app-layout>

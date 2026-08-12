@@ -170,7 +170,7 @@ new class extends Component {
                         <svg class="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Pergerakan Terakhir
                     </h4>
-                    <a href="{{ route('barang.history', $barang->id) }}" class="text-xs font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider">
+                    <a href="{{ route('barang.history', $barang->getKey()) }}" class="text-xs font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider">
                         Lihat Semua
                     </a>
                 </div>

@@ -42,12 +42,11 @@ class PenerimaanBarangService
                 $fotoBonUrl = $this->cloudinaryService->upload($file);
             }
 
-            // Generate unique no_terima on backend/service
-            $noTerima = $this->generateNoTerima();
+            // Gunakan no_terima dari klien (untuk idempotency/dedupe), fallback generate di server
+            $noTerima = $data["no_terima"] ?? $this->generateNoTerima();
 
             // 1. Create PenerimaanBarang Header
             $penerimaan = PenerimaanBarang::create([
-                "id" => $data["id"] ?? null,
                 "no_terima" => $noTerima,
                 "supplier_id" => $data["supplier_id"],
                 "user_id" => auth()->id(),
@@ -59,8 +58,7 @@ class PenerimaanBarangService
             // 2. Create Details (Stock is NOT updated yet, waiting for verification)
             foreach ($data["items"] as $item) {
                 DetailPenerimaan::create([
-                    "id" => $item["id"] ?? null,
-                    "penerimaan_barang_id" => $penerimaan->id,
+                    "penerimaan_barang_id" => $penerimaan->getKey(),
                     "barang_id" => $item["barang_id"],
                     "jumlah" => $item["jumlah"],
                     "batch_number" => $item["batch_number"] ?? null,
@@ -112,16 +110,16 @@ class PenerimaanBarangService
 
             // 2. Create batch stock entries and update stock for each item
             foreach ($penerimaan->detailPenerimaans as $detail) {
-                $barang = Barang::where("id", $detail->barang_id)
+                $barang = Barang::where("id_barang", $detail->barang_id)
                     ->lockForUpdate()
                     ->firstOrFail();
                 $oldStokTotal = $barang->stok;
 
                 // Create batch stock entry (BarangStok)
                 $barangStok = BarangStok::create([
-                    "barang_id" => $barang->id,
-                    "detail_penerimaan_id" => $detail->id,
-                    "penerimaan_barang_id" => $penerimaan->id,
+                    "barang_id" => $barang->getKey(),
+                    "detail_penerimaan_id" => $detail->getKey(),
+                    "penerimaan_barang_id" => $penerimaan->getKey(),
                     "batch_number" => $detail->batch_number,
                     "stok" => $detail->jumlah,
                     "tgl_kadaluarsa" => $detail->tgl_kadaluarsa,
@@ -135,17 +133,21 @@ class PenerimaanBarangService
 
                 // Record Stock Movement for Audit
                 StockMovement::create([
-                    "barang_id" => $barang->id,
-                    "barang_stok_id" => $barangStok->id,
+                    "barang_id" => $barang->getKey(),
+                    "barang_stok_id" => $barangStok->getKey(),
                     "user_id" => auth()->id(),
                     "type" => "in",
                     "quantity" => $detail->jumlah,
                     "before_quantity" => $oldStokTotal,
                     "after_quantity" => $newStokTotal,
                     "reason" =>
-                        "Penerimaan Barang #{$penerimaan->no_terima}" .
-                        ($catatanVerifikasi ? " ({$catatanVerifikasi})" : ""),
-                    "reference_id" => $penerimaan->id,
+                        \Illuminate\Support\Str::limit(
+                            "Penerimaan Barang #{$penerimaan->no_terima}" .
+                            ($catatanVerifikasi ? " ({$catatanVerifikasi})" : ""),
+                            50,
+                            ''
+                        ),
+                    "reference_id" => $penerimaan->getKey(),
                     "reference_type" => PenerimaanBarang::class,
                 ]);
 

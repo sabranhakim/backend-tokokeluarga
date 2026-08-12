@@ -20,9 +20,9 @@ class SupplierFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama_supplier' => $this->faker->company(),
+            'nama_supplier' => \Illuminate\Support\Str::limit($this->faker->company(), 30, ''),
             'alamat' => $this->faker->address(),
-            'no_telp' => $this->faker->phoneNumber(),
+            'no_telp' => '+62' . $this->faker->numerify('#########'),
         ];
     }
 }

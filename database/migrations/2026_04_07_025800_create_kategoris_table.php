@@ -12,9 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('kategoris', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('nama_kategori');
+            $table->unsignedInteger('id_kategori')->autoIncrement()->primary();
+            $table->boolean('is_active')->default(true);
+            $table->string('nama_kategori', 30);
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('nama_kategori');
+            $table->index('deleted_at');
         });
     }
 

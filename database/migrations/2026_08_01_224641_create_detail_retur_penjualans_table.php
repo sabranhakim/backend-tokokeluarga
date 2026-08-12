@@ -12,12 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detail_retur_penjualans', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('retur_penjualan_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('barang_id')->constrained()->cascadeOnDelete();
+            $table->unsignedInteger('id_detail_retur_penjualan')->autoIncrement()->primary();
+            $table->unsignedInteger('retur_penjualan_id');
+            $table->unsignedInteger('barang_id');
             $table->integer('jumlah');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('retur_penjualan_id')->references('id_retur_penjualan')->on('retur_penjualans')->onDelete('cascade');
+            $table->foreign('barang_id')->references('id_barang')->on('barangs')->onDelete('cascade');
 
             $table->index(['retur_penjualan_id', 'barang_id']);
         });

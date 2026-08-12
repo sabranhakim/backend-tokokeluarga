@@ -47,7 +47,7 @@ class ReturPenjualanService
                 );
 
                 DetailReturPenjualan::create([
-                    'retur_penjualan_id' => $retur->id,
+                    'retur_penjualan_id' => $retur->getKey(),
                     'barang_id' => $item['barang_id'],
                     'jumlah' => $item['jumlah'],
                 ]);

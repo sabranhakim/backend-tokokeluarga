@@ -12,17 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('stock_movements', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('barang_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedInteger('id_stock_movement')->autoIncrement()->primary();
+            $table->unsignedInteger('barang_id');
+            $table->unsignedInteger('barang_stok_id')->nullable();
+            $table->foreignId('user_id')->nullable();
             $table->enum('type', ['in', 'out', 'adjustment']);
             $table->integer('quantity');
             $table->integer('before_quantity');
             $table->integer('after_quantity');
-            $table->string('reason')->nullable();
-            $table->uuid('reference_id')->nullable();
-            $table->string('reference_type')->nullable();
+            $table->string('reason', 50)->nullable();
+            $table->unsignedInteger('reference_id')->nullable();
+            $table->string('reference_type', 255)->nullable();
             $table->timestamps();
+
+            $table->foreign('barang_id')->references('id_barang')->on('barangs')->onDelete('cascade');
+            $table->foreign('barang_stok_id')->references('id_barang_stok')->on('barang_stoks')->onDelete('set null');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
 
             $table->index(['reference_id', 'reference_type']);
         });

@@ -40,7 +40,7 @@ class PenerimaanBarangController extends Controller
     {
         try {
             $catatanVerifikasi = $request->input('catatan_verifikasi');
-            $this->penerimaanService->verify($penerimaanBarang->id, $catatanVerifikasi);
+            $this->penerimaanService->verify($penerimaanBarang->getKey(), $catatanVerifikasi);
 
             return redirect()->back()
                 ->with('success', 'Penerimaan barang berhasil diverifikasi dan stok telah diperbarui.');

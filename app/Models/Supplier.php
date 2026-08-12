@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +11,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Supplier extends Model
 {
-    use HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
+
+    protected $primaryKey = 'id_supplier';
 
     protected $fillable = [
         'is_active',
@@ -38,6 +39,6 @@ class Supplier extends Model
 
     public function penerimaanBarangs(): HasMany
     {
-        return $this->hasMany(PenerimaanBarang::class);
+        return $this->hasMany(PenerimaanBarang::class, 'supplier_id', 'id_supplier');
     }
 }

@@ -9,17 +9,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('barang_stoks', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('barang_id')->constrained('barangs')->onDelete('cascade');
-            $table->foreignUuid('detail_penerimaan_id')->nullable()->constrained('detail_penerimaans')->onDelete('set null');
-            $table->foreignUuid('penerimaan_barang_id')->nullable()->constrained('penerimaan_barangs')->onDelete('set null');
-            $table->string('batch_number', 100)->nullable();
+            $table->unsignedInteger('id_barang_stok')->autoIncrement()->primary();
+            $table->unsignedInteger('barang_id');
+            $table->unsignedInteger('detail_penerimaan_id')->nullable();
+            $table->unsignedInteger('penerimaan_barang_id')->nullable();
+            $table->string('batch_number', 20)->nullable();
             $table->integer('stok')->default(0);
             $table->date('tgl_kadaluarsa')->nullable();
             $table->date('tgl_masuk');
             $table->integer('harga_beli')->default(0);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('barang_id')->references('id_barang')->on('barangs')->onDelete('cascade');
+            $table->foreign('detail_penerimaan_id')->references('id_detail_penerimaan')->on('detail_penerimaans')->onDelete('set null');
+            $table->foreign('penerimaan_barang_id')->references('id_penerimaan_barang')->on('penerimaan_barangs')->onDelete('set null');
 
             $table->index(['barang_id', 'tgl_kadaluarsa']);
             $table->index('batch_number');

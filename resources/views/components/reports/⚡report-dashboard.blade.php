@@ -150,7 +150,7 @@ new class extends Component {
                 <select wire:model.live="selectedSupplierId" class="bg-slate-50 border-none rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 min-w-[200px]">
                     <option value="">-- Pilih Supplier --</option>
                     @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                        <option value="{{ $supplier->getKey() }}">{{ $supplier->nama_supplier }}</option>
                     @endforeach
                 </select>
             </div>

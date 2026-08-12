@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +11,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Kategori extends Model
 {
-    use HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
+
+    protected $primaryKey = 'id_kategori';
 
     protected $fillable = [
         'is_active',
@@ -36,6 +37,6 @@ class Kategori extends Model
 
     public function barangs(): HasMany
     {
-        return $this->hasMany(Barang::class);
+        return $this->hasMany(Barang::class, 'kategori_id', 'id_kategori');
     }
 }

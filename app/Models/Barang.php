@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +12,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Barang extends Model
 {
-    use HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
+
+    protected $primaryKey = 'id_barang';
 
     protected $fillable = [
         'is_active',
@@ -46,27 +47,27 @@ class Barang extends Model
 
     public function kategori(): BelongsTo
     {
-        return $this->belongsTo(Kategori::class);
+        return $this->belongsTo(Kategori::class, 'kategori_id', 'id_kategori');
     }
 
     public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'id_supplier');
     }
 
     public function detailPenerimaans(): HasMany
     {
-        return $this->hasMany(DetailPenerimaan::class);
+        return $this->hasMany(DetailPenerimaan::class, 'barang_id', 'id_barang');
     }
 
     public function stockMovements(): HasMany
     {
-        return $this->hasMany(StockMovement::class);
+        return $this->hasMany(StockMovement::class, 'barang_id', 'id_barang');
     }
 
     public function barangStoks(): HasMany
     {
-        return $this->hasMany(BarangStok::class);
+        return $this->hasMany(BarangStok::class, 'barang_id', 'id_barang');
     }
 
     public function getStokTotalAttribute(): int

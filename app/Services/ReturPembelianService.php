@@ -44,9 +44,9 @@ class ReturPembelianService
                     'out',
                     function ($batch, $ambil) use ($retur, $item) {
                         DetailReturPembelian::create([
-                            'retur_pembelian_id' => $retur->id,
+                            'retur_pembelian_id' => $retur->getKey(),
                             'barang_id' => $item['barang_id'],
-                            'barang_stok_id' => $batch->id,
+                            'barang_stok_id' => $batch->getKey(),
                             'jumlah' => $ambil,
                         ]);
                     }

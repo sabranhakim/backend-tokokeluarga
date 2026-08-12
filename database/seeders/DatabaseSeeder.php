@@ -170,17 +170,17 @@ class DatabaseSeeder extends Seeder
         $suppliers = Supplier::factory(10)->create();
 
         $barangs = collect();
-        $kodeCounter = 1000;
+        $kodeCounter = 1;
 
         foreach ($kategoriList as $i => $kData) {
             $kategori = $createdKategoris[$i];
 
             foreach ($kData['barangs'] as $bData) {
                 $barang = Barang::create([
-                    'kode_barang' => 'BRG-'.$kodeCounter,
+                    'kode_barang' => 'BRG-' . str_pad((string) $kodeCounter, 3, '0', STR_PAD_LEFT),
                     'nama_barang' => $bData['nama_barang'],
-                    'kategori_id' => $kategori->id,
-                    'supplier_id' => $suppliers->random()->id,
+                    'kategori_id' => $kategori->getKey(),
+                    'supplier_id' => $suppliers->random()->getKey(),
                     'satuan' => $bData['satuan'],
                     'isi' => $bData['isi'],
                     'harga_beli' => $bData['harga_beli'],
@@ -236,7 +236,7 @@ class DatabaseSeeder extends Seeder
 
             $penerimaan = PenerimaanBarang::create([
                 'no_terima' => $noTerima,
-                'supplier_id' => $suppliers[$pi['supplier_idx']]->id,
+                'supplier_id' => $suppliers[$pi['supplier_idx']]->getKey(),
                 'user_id' => $staff->id,
                 'tgl_terima' => $tgl,
                 'status_verifikasi' => 'verified',
@@ -245,17 +245,17 @@ class DatabaseSeeder extends Seeder
             foreach ($pi['details'] as $di) {
                 $barang = $barangs[$di['barang_idx']];
                 $detail = DetailPenerimaan::create([
-                    'penerimaan_barang_id' => $penerimaan->id,
-                    'barang_id' => $barang->id,
+                    'penerimaan_barang_id' => $penerimaan->getKey(),
+                    'barang_id' => $barang->getKey(),
                     'jumlah' => $di['jumlah'],
                     'batch_number' => $di['batch'],
                     'tgl_kadaluarsa' => now()->modify($di['exp']),
                 ]);
 
                 $barangStok = BarangStok::create([
-                    'barang_id' => $barang->id,
-                    'detail_penerimaan_id' => $detail->id,
-                    'penerimaan_barang_id' => $penerimaan->id,
+                    'barang_id' => $barang->getKey(),
+                    'detail_penerimaan_id' => $detail->getKey(),
+                    'penerimaan_barang_id' => $penerimaan->getKey(),
                     'batch_number' => $di['batch'],
                     'stok' => $di['jumlah'],
                     'tgl_kadaluarsa' => now()->modify($di['exp']),
@@ -267,15 +267,15 @@ class DatabaseSeeder extends Seeder
                 $barang->increment('stok', $di['jumlah']);
 
                 StockMovement::create([
-                    'barang_id' => $barang->id,
-                    'barang_stok_id' => $barangStok->id,
+                    'barang_id' => $barang->getKey(),
+                    'barang_stok_id' => $barangStok->getKey(),
                     'user_id' => $staff->id,
                     'type' => 'in',
                     'quantity' => $di['jumlah'],
                     'before_quantity' => $stokSebelum,
                     'after_quantity' => $barang->stok,
                     'reason' => "Seeder: Penerimaan #{$noTerima}",
-                    'reference_id' => $penerimaan->id,
+                    'reference_id' => $penerimaan->getKey(),
                     'reference_type' => PenerimaanBarang::class,
                 ]);
             }
@@ -321,7 +321,7 @@ class DatabaseSeeder extends Seeder
                 $barang = $barangs[$ii['barang_idx']];
                 $sisaKurang = $ii['jumlah'];
 
-                $batches = BarangStok::where('barang_id', $barang->id)
+                $batches = BarangStok::where('barang_id', $barang->getKey())
                     ->where('stok', '>', 0)
                     ->orderBy('tgl_kadaluarsa', 'asc')
                     ->orderBy('tgl_masuk', 'asc')
@@ -338,22 +338,22 @@ class DatabaseSeeder extends Seeder
                     $sisaKurang -= $ambil;
 
                     DetailBarangKeluar::create([
-                        'barang_keluar_id' => $barangKeluar->id,
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $batch->id,
+                        'barang_keluar_id' => $barangKeluar->getKey(),
+                        'barang_id' => $barang->getKey(),
+                        'barang_stok_id' => $batch->getKey(),
                         'jumlah' => $ambil,
                     ]);
 
                     StockMovement::create([
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $batch->id,
+                        'barang_id' => $barang->getKey(),
+                        'barang_stok_id' => $batch->getKey(),
                         'user_id' => $staff->id,
                         'type' => 'out',
                         'quantity' => $ambil,
                         'before_quantity' => $stokSebelum,
                         'after_quantity' => $stokSebelum - $ambil,
                         'reason' => "Seeder: Barang Keluar #{$noKeluar}",
-                        'reference_id' => $barangKeluar->id,
+                        'reference_id' => $barangKeluar->getKey(),
                         'reference_type' => BarangKeluar::class,
                     ]);
                 }
@@ -365,7 +365,7 @@ class DatabaseSeeder extends Seeder
         $returPembelianItems = [
             ['supplier_idx' => 0, 'tgl' => '-20 days', 'items' => [
                 ['barang_idx' => 0, 'jumlah' => 3],
-            ], 'ket' => 'Tepung menerima reject dari pabrik'],
+            ], 'ket' => 'Reject dari pabrik'],
             ['supplier_idx' => 2, 'tgl' => '-1 week', 'items' => [
                 ['barang_idx' => 10, 'jumlah' => 2],
                 ['barang_idx' => 12, 'jumlah' => 1],
@@ -378,7 +378,7 @@ class DatabaseSeeder extends Seeder
 
             $retur = ReturPembelian::create([
                 'no_retur' => $noRetur,
-                'supplier_id' => $suppliers[$rpi['supplier_idx']]->id,
+                'supplier_id' => $suppliers[$rpi['supplier_idx']]->getKey(),
                 'user_id' => $staff->id,
                 'tgl_retur' => $tgl,
                 'keterangan' => $rpi['ket'],
@@ -388,7 +388,7 @@ class DatabaseSeeder extends Seeder
                 $barang = $barangs[$rii['barang_idx']];
                 $sisaKurang = $rii['jumlah'];
 
-                $batches = BarangStok::where('barang_id', $barang->id)
+                $batches = BarangStok::where('barang_id', $barang->getKey())
                     ->where('stok', '>', 0)
                     ->orderBy('tgl_kadaluarsa', 'asc')
                     ->orderBy('tgl_masuk', 'asc')
@@ -405,22 +405,22 @@ class DatabaseSeeder extends Seeder
                     $sisaKurang -= $ambil;
 
                     DetailReturPembelian::create([
-                        'retur_pembelian_id' => $retur->id,
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $batch->id,
+                        'retur_pembelian_id' => $retur->getKey(),
+                        'barang_id' => $barang->getKey(),
+                        'barang_stok_id' => $batch->getKey(),
                         'jumlah' => $ambil,
                     ]);
 
                     StockMovement::create([
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $batch->id,
+                        'barang_id' => $barang->getKey(),
+                        'barang_stok_id' => $batch->getKey(),
                         'user_id' => $staff->id,
                         'type' => 'out',
                         'quantity' => $ambil,
                         'before_quantity' => $stokSebelum,
                         'after_quantity' => $stokSebelum - $ambil,
                         'reason' => "Seeder: Retur Pembelian #{$noRetur}",
-                        'reference_id' => $retur->id,
+                        'reference_id' => $retur->getKey(),
                         'reference_type' => ReturPembelian::class,
                     ]);
                 }
@@ -456,7 +456,7 @@ class DatabaseSeeder extends Seeder
                 $stokSebelum = $barang->stok;
 
                 $barangStok = BarangStok::create([
-                    'barang_id' => $barang->id,
+                    'barang_id' => $barang->getKey(),
                     'batch_number' => $noRetur,
                     'stok' => $rji['jumlah'],
                     'tgl_masuk' => $tgl,
@@ -466,21 +466,21 @@ class DatabaseSeeder extends Seeder
                 $barang->increment('stok', $rji['jumlah']);
 
                 DetailReturPenjualan::create([
-                    'retur_penjualan_id' => $retur->id,
-                    'barang_id' => $barang->id,
+                    'retur_penjualan_id' => $retur->getKey(),
+                    'barang_id' => $barang->getKey(),
                     'jumlah' => $rji['jumlah'],
                 ]);
 
                 StockMovement::create([
-                    'barang_id' => $barang->id,
-                    'barang_stok_id' => $barangStok->id,
+                    'barang_id' => $barang->getKey(),
+                    'barang_stok_id' => $barangStok->getKey(),
                     'user_id' => $staff->id,
                     'type' => 'in',
                     'quantity' => $rji['jumlah'],
                     'before_quantity' => $stokSebelum,
                     'after_quantity' => $barang->stok,
                     'reason' => "Seeder: Retur Penjualan #{$noRetur}",
-                    'reference_id' => $retur->id,
+                    'reference_id' => $retur->getKey(),
                     'reference_type' => ReturPenjualan::class,
                 ]);
             }
@@ -509,8 +509,8 @@ class DatabaseSeeder extends Seeder
             $totalSelisihOpname += $selisih;
 
             DetailStockOpname::create([
-                'stock_opname_id' => $opnameSelesai->id,
-                'barang_id' => $barang->id,
+                'stock_opname_id' => $opnameSelesai->getKey(),
+                'barang_id' => $barang->getKey(),
                 'stok_sistem' => $stokSistem,
                 'stok_fisik' => $stokFisik,
                 'selisih' => $selisih,
@@ -519,7 +519,7 @@ class DatabaseSeeder extends Seeder
             if ($selisih != 0) {
                 if ($selisih > 0) {
                     $barangStok = BarangStok::create([
-                        'barang_id' => $barang->id,
+                        'barang_id' => $barang->getKey(),
                         'batch_number' => $opnameSelesai->no_opname,
                         'stok' => $selisih,
                         'tgl_masuk' => now()->modify('-2 days'),
@@ -528,20 +528,20 @@ class DatabaseSeeder extends Seeder
                     $barang->increment('stok', $selisih);
 
                     StockMovement::create([
-                        'barang_id' => $barang->id,
-                        'barang_stok_id' => $barangStok->id,
+                        'barang_id' => $barang->getKey(),
+                        'barang_stok_id' => $barangStok->getKey(),
                         'user_id' => $staff->id,
                         'type' => 'adjustment',
                         'quantity' => $selisih,
                         'before_quantity' => $stokSistem,
                         'after_quantity' => $barang->stok,
                         'reason' => "Seeder: Stock Opname #{$opnameSelesai->no_opname}",
-                        'reference_id' => $opnameSelesai->id,
+                        'reference_id' => $opnameSelesai->getKey(),
                         'reference_type' => StockOpname::class,
                     ]);
                 } else {
                     $sisaKurang = abs($selisih);
-                    $batches = BarangStok::where('barang_id', $barang->id)
+                    $batches = BarangStok::where('barang_id', $barang->getKey())
                         ->where('stok', '>', 0)
                         ->orderBy('tgl_kadaluarsa', 'asc')
                         ->get();
@@ -557,15 +557,15 @@ class DatabaseSeeder extends Seeder
                         $sisaKurang -= $ambil;
 
                         StockMovement::create([
-                            'barang_id' => $barang->id,
-                            'barang_stok_id' => $batch->id,
+                            'barang_id' => $barang->getKey(),
+                            'barang_stok_id' => $batch->getKey(),
                             'user_id' => $staff->id,
                             'type' => 'adjustment',
                             'quantity' => $ambil,
                             'before_quantity' => $stokSebelum,
                             'after_quantity' => $stokSebelum - $ambil,
                             'reason' => "Seeder: Stock Opname #{$opnameSelesai->no_opname}",
-                            'reference_id' => $opnameSelesai->id,
+                            'reference_id' => $opnameSelesai->getKey(),
                             'reference_type' => StockOpname::class,
                         ]);
                     }
@@ -590,8 +590,8 @@ class DatabaseSeeder extends Seeder
             $stokFisik = $odi['fisik'];
 
             DetailStockOpname::create([
-                'stock_opname_id' => $opnameDraft->id,
-                'barang_id' => $barang->id,
+                'stock_opname_id' => $opnameDraft->getKey(),
+                'barang_id' => $barang->getKey(),
                 'stok_sistem' => $stokSistem,
                 'stok_fisik' => $stokFisik,
                 'selisih' => $stokFisik - $stokSistem,
