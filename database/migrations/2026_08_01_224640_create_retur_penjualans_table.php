@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('retur_penjualans', function (Blueprint $table) {
-            $table->unsignedInteger('id_retur_penjualan')->autoIncrement()->primary();
+            $table->unsignedInteger('id_retur_penjualan', false, 5)->autoIncrement()->primary();
             $table->string('no_retur', 20);
             $table->foreignId('user_id')->nullable();
             $table->date('tgl_retur');

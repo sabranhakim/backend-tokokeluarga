@@ -9,15 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('barang_stoks', function (Blueprint $table) {
-            $table->unsignedInteger('id_barang_stok')->autoIncrement()->primary();
-            $table->unsignedInteger('barang_id');
-            $table->unsignedInteger('detail_penerimaan_id')->nullable();
-            $table->unsignedInteger('penerimaan_barang_id')->nullable();
+            $table->unsignedInteger('id_barang_stok', false, 5)->autoIncrement()->primary();
+            $table->unsignedInteger('barang_id', false, 5);
+            $table->unsignedInteger('detail_penerimaan_id', false, 5)->nullable();
+            $table->unsignedInteger('penerimaan_barang_id', false, 5)->nullable();
             $table->string('batch_number', 20)->nullable();
-            $table->integer('stok')->default(0);
+            $table->integer('stok', false, false, 5)->default(0);
             $table->date('tgl_kadaluarsa')->nullable();
             $table->date('tgl_masuk');
-            $table->integer('harga_beli')->default(0);
+            $table->integer('harga_beli', false, false, 5)->default(0);
             $table->timestamps();
             $table->softDeletes();
 

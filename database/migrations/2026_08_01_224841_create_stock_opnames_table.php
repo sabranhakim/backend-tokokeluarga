@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('stock_opnames', function (Blueprint $table) {
-            $table->unsignedInteger('id_stock_opname')->autoIncrement()->primary();
+            $table->unsignedInteger('id_stock_opname', false, 5)->autoIncrement()->primary();
             $table->string('no_opname', 20);
             $table->foreignId('user_id')->nullable();
             $table->date('tgl_opname');
             $table->string('keterangan', 30)->nullable();
             $table->enum('status', ['draft', 'selesai'])->default('draft');
-            $table->integer('total_selisih')->default(0);
+            $table->integer('total_selisih', false, false, 5)->default(0);
             $table->timestamps();
             $table->softDeletes();
 

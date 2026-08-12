@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detail_penerimaans', function (Blueprint $table) {
-            $table->unsignedInteger('id_detail_penerimaan')->autoIncrement()->primary();
-            $table->unsignedInteger('penerimaan_barang_id');
-            $table->unsignedInteger('barang_id');
-            $table->integer('jumlah');
+            $table->unsignedInteger('id_detail_penerimaan', false, 5)->autoIncrement()->primary();
+            $table->unsignedInteger('penerimaan_barang_id', false, 5);
+            $table->unsignedInteger('barang_id', false, 5);
+            $table->integer('jumlah', false, false, 5);
             $table->string('batch_number', 20)->nullable();
             $table->date('tgl_kadaluarsa')->nullable();
             $table->timestamps();

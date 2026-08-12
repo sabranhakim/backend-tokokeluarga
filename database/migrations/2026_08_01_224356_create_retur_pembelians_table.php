@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('retur_pembelians', function (Blueprint $table) {
-            $table->unsignedInteger('id_retur_pembelian')->autoIncrement()->primary();
+            $table->unsignedInteger('id_retur_pembelian', false, 5)->autoIncrement()->primary();
             $table->string('no_retur', 20);
-            $table->unsignedInteger('supplier_id')->nullable();
+            $table->unsignedInteger('supplier_id', false, 5)->nullable();
             $table->foreignId('user_id')->nullable();
             $table->date('tgl_retur');
             $table->string('keterangan', 30)->nullable();

@@ -12,17 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('barangs', function (Blueprint $table) {
-            $table->unsignedInteger('id_barang')->autoIncrement()->primary();
+            $table->unsignedInteger('id_barang', false, 5)->autoIncrement()->primary();
             $table->string('kode_barang', 10)->unique();
             $table->string('nama_barang', 30);
-            $table->unsignedInteger('kategori_id')->nullable();
-            $table->unsignedInteger('supplier_id')->nullable();
+            $table->unsignedInteger('kategori_id', false, 5)->nullable();
+            $table->unsignedInteger('supplier_id', false, 5)->nullable();
             $table->string('satuan', 30);
-            $table->integer('isi')->default(1);
-            $table->integer('harga_beli')->default(0);
-            $table->integer('harga_jual')->default(0);
-            $table->integer('stok')->default(0);
-            $table->integer('stok_minimal')->default(10);
+            $table->integer('isi', false, false, 5)->default(1);
+            $table->integer('harga_beli', false, false, 5)->default(0);
+            $table->integer('harga_jual', false, false, 5)->default(0);
+            $table->integer('stok', false, false, 5)->default(0);
+            $table->integer('stok_minimal', false, false, 5)->default(10);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

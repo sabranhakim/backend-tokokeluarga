@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('suppliers', function (Blueprint $table) {
-            $table->unsignedInteger('id_supplier')->autoIncrement()->primary();
+            $table->unsignedInteger('id_supplier', false, 5)->autoIncrement()->primary();
             $table->boolean('is_active')->default(true);
             $table->string('nama_supplier', 30);
             $table->text('alamat')->nullable();

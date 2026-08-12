@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('penerimaan_barangs', function (Blueprint $table) {
-            $table->unsignedInteger('id_penerimaan_barang')->autoIncrement()->primary();
+            $table->unsignedInteger('id_penerimaan_barang', false, 5)->autoIncrement()->primary();
             $table->string('no_terima', 20)->unique();
-            $table->unsignedInteger('supplier_id');
+            $table->unsignedInteger('supplier_id', false, 5);
             $table->foreignId('user_id');
             $table->date('tgl_terima');
             $table->string('foto_bon', 255)->nullable();

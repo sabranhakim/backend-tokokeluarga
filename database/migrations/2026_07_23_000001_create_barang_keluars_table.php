@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('barang_keluars', function (Blueprint $table) {
-            $table->unsignedInteger('id_barang_keluar')->autoIncrement()->primary();
+            $table->unsignedInteger('id_barang_keluar', false, 5)->autoIncrement()->primary();
             $table->string('no_keluar', 20)->unique();
             $table->foreignId('user_id');
             $table->date('tgl_keluar');
