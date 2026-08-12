@@ -209,8 +209,12 @@ new class extends Component {
                                         {{ $typeLabel }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right font-bold {{ $movement->quantity > 0 ? 'text-emerald-600' : 'text-rose-600' }}">
-                                    {{ ($movement->quantity > 0 ? '+' : '') . $movement->quantity }}
+                                @php
+                                    $delta = (int) $movement->after_quantity - (int) $movement->before_quantity;
+                                    $sign = $delta > 0 ? '+' : ($delta < 0 ? '-' : '');
+                                @endphp
+                                <td class="px-6 py-4 text-right font-bold {{ $delta < 0 ? 'text-rose-600' : ($delta > 0 ? 'text-emerald-600' : 'text-slate-500') }}">
+                                    {{ $sign . abs($movement->quantity) }}
                                 </td>
                                 <td class="px-6 py-4 text-xs text-slate-600">
                                     {{ $movement->reason ?? '-' }}

@@ -95,11 +95,10 @@ new class extends Component {
                             </span>
                         </td>
                         @php
-                            $isOut = $movement->type === 'out';
-                            $isNegative = $movement->quantity < 0;
-                            $sign = $isOut || $isNegative ? '-' : '+';
+                            $delta = (int) $movement->after_quantity - (int) $movement->before_quantity;
+                            $sign = $delta > 0 ? '+' : ($delta < 0 ? '-' : '');
                         @endphp
-                        <td class="px-6 py-4 text-right font-black {{ $isOut || $isNegative ? 'text-rose-600' : 'text-emerald-600' }}">
+                        <td class="px-6 py-4 text-right font-black {{ $delta < 0 ? 'text-rose-600' : ($delta > 0 ? 'text-emerald-600' : 'text-slate-400') }}">
                             {{ $sign . abs($movement->quantity) }}
                         </td>
                         <td class="px-6 py-4 text-center text-slate-400 font-mono text-sm">

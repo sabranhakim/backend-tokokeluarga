@@ -41,4 +41,9 @@ class Supplier extends Model
     {
         return $this->hasMany(PenerimaanBarang::class, 'supplier_id', 'id_supplier');
     }
+
+    public function barangs(): HasMany
+    {
+        return $this->hasMany(Barang::class, 'supplier_id', 'id_supplier');
+    }
 }

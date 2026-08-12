@@ -81,7 +81,7 @@ new class extends Component {
 
         return [
             'stoks' => $query->latest('tgl_masuk')->paginate(15),
-            'barangs' => Barang::orderBy('nama_barang')->get(['id', 'kode_barang', 'nama_barang']),
+            'barangs' => Barang::orderBy('nama_barang')->get(['id_barang', 'kode_barang', 'nama_barang']),
         ];
     }
 
