@@ -28,7 +28,7 @@ new class extends Component {
         'items' => 'required|array|min:1',
         'items.*.barang_id' => 'required|exists:barangs,id_barang|distinct',
         'items.*.jumlah' => 'required|numeric|min:1',
-        'items.*.batch_number' => 'nullable|string|max:100',
+        'items.*.batch_number' => 'required|string|max:100',
         'items.*.tgl_kadaluarsa' => 'nullable|date',
     ];
 
@@ -69,14 +69,42 @@ new class extends Component {
         }
     }
 
+    protected function ensureBatchNumbers()
+    {
+        foreach ($this->items as $index => $item) {
+            if (!empty($item['barang_id'])) {
+                $this->generateBatchNumber($index, $item['barang_id']);
+            }
+        }
+    }
+
     public function removeItem($index)
     {
         unset($this->items[$index]);
         $this->items = array_values($this->items);
     }
 
+    public function getTotalHargaProperty()
+    {
+        $total = 0;
+        foreach ($this->items as $item) {
+            if (empty($item['barang_id'])) continue;
+            $barang = Barang::find($item['barang_id']);
+            if ($barang) {
+                $total += (float) $item['jumlah'] * (float) $barang->harga_beli;
+            }
+        }
+        return $total;
+    }
+
+    public function formatRupiah($value)
+    {
+        return 'Rp ' . number_format((float) $value, 0, ',', '.');
+    }
+
     public function showConfirmPreview()
     {
+        $this->ensureBatchNumbers();
         $this->validate();
         $this->showPreview = true;
     }
@@ -93,6 +121,11 @@ new class extends Component {
             return;
         }
         $validated = $this->validate();
+
+        // Jika no_terima masih placeholder, biarkan server yang generate (TRM-...)
+        if (blank($validated['no_terima']) || $validated['no_terima'] === 'Otomatis (dibuat oleh sistem)') {
+            $validated['no_terima'] = null;
+        }
 
         try {
             $penerimaan = $service->store($validated);
@@ -265,7 +298,9 @@ new class extends Component {
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                        <h3 class="text-lg font-bold text-slate-800">Daftar Barang</h3>
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">Daftar Barang
+                            <span class="text-xs font-black bg-blue-600 text-white rounded-full px-2 py-0.5">{{ count($items) }}</span>
+                        </h3>
                         <button type="button" wire:click="addItem" class="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg font-bold hover:bg-blue-100 transition-colors flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                             Tambah Baris
@@ -276,10 +311,13 @@ new class extends Component {
                         <div class="space-y-4">
                             @php $barangsJson = $barangs->map(fn($b) => ['id' => $b->getKey(), 'kode_barang' => $b->kode_barang, 'nama_barang' => $b->nama_barang, 'satuan' => $b->satuan, 'isi' => $b->isi ?? 1])->toJson(); @endphp
                             @foreach($items as $index => $item)
-                            <div wire:key="item-{{ $index }}" class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group transition-all hover:bg-slate-50">
+                            <div wire:key="item-{{ $index }}" class="bg-white p-4 rounded-xl border border-slate-200 relative group transition-all hover:border-blue-300 hover:shadow-sm">
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                <div class="md:col-span-5">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cari SKU / Nama Barang</label>
+                                <div class="md:col-span-12 lg:col-span-7">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center">
+                                        <span class="w-5 h-5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-black flex items-center justify-center mr-1.5 shadow-sm">{{ $index + 1 }}</span>
+                                        Barang
+                                    </label>
                                     <div wire:key="search-{{ $index }}" x-data="{
                                         search: '',
                                         selectedId: @entangle('items.' . $index . '.barang_id'),
@@ -294,11 +332,12 @@ new class extends Component {
                                                 b.nama_barang.toLowerCase().includes(q)
                                             ).slice(0, 20);
                                         },
-                                        select(barang) {
+                                        async select(barang) {
                                             this.selectedId = barang.id;
                                             this.selectedLabel = barang.kode_barang + ' - ' + barang.nama_barang + ' (' + barang.satuan + ')' + (barang.isi > 1 ? ' - ' + barang.isi + ' pcs/' + barang.satuan : '');
                                             this.search = '';
                                             this.open = false;
+                                            await $wire.generateBatchNumber({{ $index }}, barang.id);
                                         },
                                         init() {
                                             if (this.selectedId) {
@@ -338,48 +377,74 @@ new class extends Component {
                                     </div>
                                     @error("items.$index.barang_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="md:col-span-2">
+                                <div class="md:col-span-6 lg:col-span-3">
                                     @php
                                         $barangTerpilih = $barangs->firstWhere('id', $item['barang_id'] ?? '');
                                         $isiItem = $barangTerpilih?->isi ?? 1;
                                         $satuanItem = $barangTerpilih?->satuan ?? 'pcs';
                                     @endphp
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah ({{ $satuanItem }})</label>
-                                    <input wire:model.live="items.{{ $index }}.jumlah" type="number" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                    @if($barangTerpilih)
-                                        <div class="mt-1 text-xs text-slate-400">
-                                            @if($isiItem > 1 && $item['jumlah'] >= $isiItem)
-                                                <span class="text-blue-600 font-medium">
-                                                    = {{ intdiv((int)$item['jumlah'], $isiItem) }} {{ $satuanItem }}
-                                                    @if((int)$item['jumlah'] % $isiItem > 0)
-                                                        + {{ (int)$item['jumlah'] % $isiItem }} pcs
-                                                    @endif
-                                                </span>
-                                            @elseif($isiItem > 1)
-                                                <span class="text-slate-400">1 {{ $satuanItem }} = {{ $isiItem }} pcs</span>
-                                            @endif
-                                        </div>
-                                    @endif
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah</label>
+                                    <div class="relative">
+                                        <input wire:model.live="items.{{ $index }}.jumlah" type="number" min="1"
+                                               class="w-full px-4 py-2 pr-20 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                        <span class="absolute inset-y-0 right-3 flex items-center text-[10px] font-black text-slate-400 uppercase pointer-events-none">{{ $satuanItem }}</span>
+                                    </div>
                                     @error("items.$index.jumlah") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Batch</label>
-                                    <input wire:model="items.{{ $index }}.batch_number" type="text" placeholder="Opsional" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                    @error("items.$index.batch_number") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tgl. Kadaluarsa</label>
-                                    <input wire:model="items.{{ $index }}.tgl_kadaluarsa" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                    @error("items.$index.tgl_kadaluarsa") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="md:col-span-1 flex justify-center">
+                                <div class="md:col-span-6 lg:col-span-2 flex items-end justify-end">
                                     @if(count($items) > 1)
                                     <button type="button" wire:click="removeItem({{ $index }})" class="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all" title="Hapus Baris">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
+                                    @else
+                                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-wider">1 baris</span>
                                     @endif
                                 </div>
+                                <div class="md:col-span-6 lg:col-span-5">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center">Batch
+                                        <span class="ml-1.5 text-[9px] font-black bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded uppercase tracking-wider">otomatis</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input wire:model="items.{{ $index }}.batch_number" type="text" readonly placeholder="Otomatis saat barang dipilih"
+                                               class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 outline-none transition-all cursor-not-allowed @if(empty($item['batch_number'])) text-slate-400 italic @endif">
+                                        @if(!empty($item['batch_number']))
+                                        <svg class="absolute inset-y-0 right-3 my-auto w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @endif
+                                    </div>
+                                    @error("items.$index.batch_number") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="md:col-span-6 lg:col-span-7">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tgl. Kadaluarsa</label>
+                                    <input wire:model="items.{{ $index }}.tgl_kadaluarsa" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                    @error("items.$index.tgl_kadaluarsa") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
                             </div>
+                            @if($barangTerpilih)
+                            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
+                                @if($isiItem > 1)
+                                    <span class="inline-flex items-center text-slate-500 font-medium">
+                                        <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7V5c0-1.1.9-2 2-2h8l4 4h5v10H6c-2 0-4 1.79-4 4V7h2zm0 0v12"/></svg>
+                                        1 {{ $satuanItem }} = {{ $isiItem }} pcs
+                                    </span>
+                                    @if((int)$item['jumlah'] >= $isiItem && (int)$item['jumlah'] > 0)
+                                    <span class="inline-flex items-center text-blue-600 font-bold">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                        = {{ intdiv((int)$item['jumlah'], $isiItem) }} {{ $satuanItem }}
+                                        @if((int)$item['jumlah'] % $isiItem > 0)
+                                            + {{ (int)$item['jumlah'] % $isiItem }} pcs
+                                        @endif
+                                    </span>
+                                    @endif
+                                @endif
+                                <span class="inline-flex items-center text-slate-500 font-medium">
+                                    Harga beli: <span class="font-bold text-slate-700 ml-1">{{ $this->formatRupiah($barangTerpilih->harga_beli) }}</span>
+                                    <span class="text-slate-400 ml-0.5">/ {{ $satuanItem }}</span>
+                                </span>
+                                <span class="ml-auto inline-flex items-center font-black text-emerald-700">
+                                    Subtotal: {{ $this->formatRupiah((float) $item['jumlah'] * (float) $barangTerpilih->harga_beli) }}
+                                </span>
+                            </div>
+                            @endif
                         </div>
                             @endforeach
                         </div>
@@ -388,7 +453,17 @@ new class extends Component {
                         @error('general') <p class="mt-4 text-red-500 text-sm font-medium">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-6">
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Baris</p>
+                                <p class="text-lg font-black text-slate-800">{{ count($items) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Harga (Harga Beli)</p>
+                                <p class="text-xl font-black text-emerald-700">{{ $this->formatRupiah($this->totalHarga) }}</p>
+                            </div>
+                        </div>
                         <button type="submit"
                                 wire:loading.attr="disabled"
                                 wire:target="save"
@@ -517,6 +592,10 @@ new class extends Component {
                             <tr>
                                 <td colspan="3" class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
                                 <td class="px-4 py-3 text-right text-slate-950 font-black">{{ $totalQty }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="px-4 py-3 text-slate-500 uppercase">Total Harga (Harga Beli)</td>
+                                <td class="px-4 py-3 text-right text-emerald-700 font-black">{{ $this->formatRupiah($this->totalHarga) }}</td>
                             </tr>
                         </tfoot>
                     </table>

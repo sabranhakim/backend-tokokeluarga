@@ -43,7 +43,7 @@ class PenerimaanBarangService
             }
 
             // Gunakan no_terima dari klien (untuk idempotency/dedupe), fallback generate di server
-            $noTerima = $data["no_terima"] ?? $this->generateNoTerima();
+            $noTerima = !empty($data["no_terima"]) ? $data["no_terima"] : $this->generateNoTerima();
 
             // 1. Create PenerimaanBarang Header
             $penerimaan = PenerimaanBarang::create([
@@ -61,8 +61,8 @@ class PenerimaanBarangService
                     "penerimaan_barang_id" => $penerimaan->getKey(),
                     "barang_id" => $item["barang_id"],
                     "jumlah" => $item["jumlah"],
-                    "batch_number" => $item["batch_number"] ?? null,
-                    "tgl_kadaluarsa" => $item["tgl_kadaluarsa"] ?? null,
+                    "batch_number" => !empty($item["batch_number"]) ? $item["batch_number"] : null,
+                    "tgl_kadaluarsa" => !empty($item["tgl_kadaluarsa"]) ? $item["tgl_kadaluarsa"] : null,
                 ]);
             }
 

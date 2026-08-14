@@ -104,10 +104,14 @@
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch</th>
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kadaluarsa</th>
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Jumlah</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Harga Beli</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
+                            @php $grandTotal = 0; @endphp
                             @foreach($penerimaanBarang->detailPenerimaans as $detail)
+                            @php $subtotal = (float) $detail->jumlah * (float) $detail->barang->harga_beli; $grandTotal += $subtotal; @endphp
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-6 py-4">
                                     <span class="font-mono text-xs font-bold px-2 py-1 bg-slate-100 text-slate-700 rounded">{{ $detail->barang->kode_barang }}</span>
@@ -127,6 +131,8 @@
                                         {{ $detail->jumlah }}
                                     </span>
                                 </td>
+                                <td class="px-6 py-4 text-right text-sm text-slate-600">{{ number_format($detail->barang->harga_beli, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-slate-900">{{ number_format($subtotal, 0, ',', '.') }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -135,6 +141,10 @@
                                 <td colspan="4" class="px-6 py-4 text-sm font-bold text-slate-600 text-right uppercase">Total Item</td>
                                 <td class="px-6 py-4 text-right">
                                     <span class="text-lg font-bold text-slate-900">{{ $penerimaanBarang->detailPenerimaans->sum('jumlah') }}</span>
+                                </td>
+                                <td></td>
+                                <td class="px-6 py-4 text-right">
+                                    <span class="text-lg font-bold text-emerald-700">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
                                 </td>
                             </tr>
                         </tfoot>

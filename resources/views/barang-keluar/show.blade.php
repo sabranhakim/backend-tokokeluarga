@@ -55,12 +55,15 @@
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kode Barang</th>
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Barang</th>
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Jumlah</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">{{ $barangKeluar->jenis_keluar === 'penjualan' ? 'Harga Jual' : 'Harga Beli' }}</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @php
                                 $groupedDetails = $barangKeluar->detailBarangKeluars->groupBy('barang_id');
                                 $grandTotal = 0;
+                                $grandTotalHarga = 0;
                             @endphp
                             @foreach($groupedDetails as $barangId => $details)
                             @php
@@ -68,6 +71,9 @@
                                 $totalJumlah = $details->sum('jumlah');
                                 $grandTotal += $totalJumlah;
                                 $satuan = $barang->satuan;
+                                $harga = $barangKeluar->jenis_keluar === 'penjualan' ? (float) $barang->harga_jual : (float) $barang->harga_beli;
+                                $subtotal = $harga * $totalJumlah;
+                                $grandTotalHarga += $subtotal;
                             @endphp
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-6 py-4">
@@ -89,6 +95,8 @@
                                         {{ $totalJumlah }} {{ $satuan }}
                                     </span>
                                 </td>
+                                <td class="px-6 py-4 text-right text-sm text-slate-600">Rp {{ number_format($harga, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-slate-900">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -97,6 +105,10 @@
                                 <td colspan="2" class="px-6 py-4 text-sm font-bold text-slate-600 text-right uppercase">Total Item</td>
                                 <td class="px-6 py-4 text-right">
                                     <span class="text-lg font-bold text-slate-900">{{ $grandTotal }}</span>
+                                </td>
+                                <td></td>
+                                <td class="px-6 py-4 text-right">
+                                    <span class="text-lg font-bold text-blue-700">Rp {{ number_format($grandTotalHarga, 0, ',', '.') }}</span>
                                 </td>
                             </tr>
                         </tfoot>

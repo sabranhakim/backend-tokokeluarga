@@ -7,11 +7,35 @@ use App\Models\PenerimaanBarang;
 use App\Models\Supplier;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 new class extends Component
 {
     public function with()
     {
+        $totalHargaMasuk = DB::table('detail_penerimaans')
+            ->join('barangs', 'barangs.id_barang', '=', 'detail_penerimaans.barang_id')
+            ->join('penerimaan_barangs', 'penerimaan_barangs.id_penerimaan_barang', '=', 'detail_penerimaans.penerimaan_barang_id')
+            ->whereNull('detail_penerimaans.deleted_at')
+            ->whereNull('barangs.deleted_at')
+            ->whereNull('penerimaan_barangs.deleted_at')
+            ->where('barangs.is_active', true)
+            ->where('penerimaan_barangs.status_verifikasi', 'verified')
+            ->sum(DB::raw('detail_penerimaans.jumlah * barangs.harga_beli'));
+
+        $totalHargaKeluar = DB::table('detail_barang_keluars')
+            ->join('barangs', 'barangs.id_barang', '=', 'detail_barang_keluars.barang_id')
+            ->join('barang_keluars', 'barang_keluars.id_barang_keluar', '=', 'detail_barang_keluars.barang_keluar_id')
+            ->whereNull('detail_barang_keluars.deleted_at')
+            ->whereNull('barangs.deleted_at')
+            ->whereNull('barang_keluars.deleted_at')
+            ->where('barangs.is_active', true)
+            ->where('barang_keluars.jenis_keluar', 'penjualan')
+            ->sum(DB::raw('detail_barang_keluars.jumlah * barangs.harga_jual'));
+
+        $labaKotor = $totalHargaKeluar - $totalHargaMasuk;
+        $marginPersen = $totalHargaKeluar > 0 ? round($labaKotor / $totalHargaKeluar * 100, 1) : 0;
+
         return [
             'totalBarang' => Barang::count(),
             'totalSupplier' => Supplier::count(),
@@ -19,6 +43,60 @@ new class extends Component
             'totalBarangKeluar' => BarangKeluar::count(),
             'barangKeluarHariIni' => BarangKeluar::whereDate('tgl_keluar', today())->count(),
             'stokMenipisCount' => Barang::whereColumn('stok', '<=', 'stok_minimal')->count(),
+            'totalHargaMasuk' => $totalHargaMasuk,
+            'totalHargaKeluar' => $totalHargaKeluar,
+            'labaKotor' => $labaKotor,
+            'marginPersen' => $marginPersen,
+            'nilaiStok' => DB::table('barangs')
+                ->where('is_active', true)
+                ->whereNull('deleted_at')
+                ->sum(DB::raw('stok * harga_beli')),
+            'pembelianPerSupplier' => DB::table('detail_penerimaans')
+                ->join('barangs', 'barangs.id_barang', '=', 'detail_penerimaans.barang_id')
+                ->join('penerimaan_barangs', 'penerimaan_barangs.id_penerimaan_barang', '=', 'detail_penerimaans.penerimaan_barang_id')
+                ->join('suppliers', 'suppliers.id_supplier', '=', 'penerimaan_barangs.supplier_id')
+                ->whereNull('detail_penerimaans.deleted_at')
+                ->whereNull('barangs.deleted_at')
+                ->whereNull('penerimaan_barangs.deleted_at')
+                ->whereNull('suppliers.deleted_at')
+                ->where('penerimaan_barangs.status_verifikasi', 'verified')
+                ->groupBy('suppliers.id_supplier', 'suppliers.nama_supplier')
+                ->select('suppliers.nama_supplier', DB::raw('SUM(detail_penerimaans.jumlah * barangs.harga_beli) as total'))
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get(),
+            'pembelianPerKategori' => DB::table('detail_penerimaans')
+                ->join('barangs', 'barangs.id_barang', '=', 'detail_penerimaans.barang_id')
+                ->join('penerimaan_barangs', 'penerimaan_barangs.id_penerimaan_barang', '=', 'detail_penerimaans.penerimaan_barang_id')
+                ->leftJoin('kategoris', 'kategoris.id_kategori', '=', 'barangs.kategori_id')
+                ->whereNull('detail_penerimaans.deleted_at')
+                ->whereNull('barangs.deleted_at')
+                ->whereNull('penerimaan_barangs.deleted_at')
+                ->where('penerimaan_barangs.status_verifikasi', 'verified')
+                ->groupBy(DB::raw('COALESCE(kategoris.nama_kategori, \'Tanpa Kategori\')'))
+                ->select(
+                    DB::raw('COALESCE(kategoris.nama_kategori, \'Tanpa Kategori\') as nama_kategori'),
+                    DB::raw('SUM(detail_penerimaans.jumlah * barangs.harga_beli) as total')
+                )
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get(),
+            'penjualanPerKategori' => DB::table('detail_barang_keluars')
+                ->join('barangs', 'barangs.id_barang', '=', 'detail_barang_keluars.barang_id')
+                ->join('barang_keluars', 'barang_keluars.id_barang_keluar', '=', 'detail_barang_keluars.barang_keluar_id')
+                ->leftJoin('kategoris', 'kategoris.id_kategori', '=', 'barangs.kategori_id')
+                ->whereNull('detail_barang_keluars.deleted_at')
+                ->whereNull('barangs.deleted_at')
+                ->whereNull('barang_keluars.deleted_at')
+                ->where('barang_keluars.jenis_keluar', 'penjualan')
+                ->groupBy(DB::raw('COALESCE(kategoris.nama_kategori, \'Tanpa Kategori\')'))
+                ->select(
+                    DB::raw('COALESCE(kategoris.nama_kategori, \'Tanpa Kategori\') as nama_kategori'),
+                    DB::raw('SUM(detail_barang_keluars.jumlah * barangs.harga_jual) as total')
+                )
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get(),
             'penerimaanTerbaru' => PenerimaanBarang::with('supplier', 'user')->latest()->take(5)->get(),
             'barangKeluarTerbaru' => BarangKeluar::with('user', 'detailBarangKeluars.barang')->latest()->take(5)->get(),
             'stokKritis' => Barang::whereColumn('stok', '<=', 'stok_minimal')->orderBy('stok', 'asc')->take(5)->get(),
@@ -31,6 +109,11 @@ new class extends Component
                 ->take(5)
                 ->get(),
         ];
+    }
+
+    public function formatRupiah($value)
+    {
+        return 'Rp ' . number_format((float) $value, 0, ',', '.');
     }
 
     public function getModelName($subjectType)
@@ -112,6 +195,143 @@ new class extends Component
                     <div class="p-2 bg-amber-100 rounded-lg text-amber-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ringkasan Keuangan -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center">
+                <svg class="w-4 h-4 mr-2 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Ringkasan Keuangan
+            </h3>
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Perhitungan sederhana tanpa modul keuangan</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <!-- Total Pembelian -->
+            <div class="bg-emerald-50/50 rounded-2xl border border-emerald-100 p-5 flex flex-col justify-between min-h-[110px]">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-emerald-700 uppercase tracking-widest">Total Pembelian</p>
+                    <div class="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-emerald-700 leading-tight">{{ $this->formatRupiah($totalHargaMasuk) }}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">Nilai barang masuk (verified)</p>
+                </div>
+            </div>
+
+            <!-- Total Penjualan -->
+            <div class="bg-blue-50/50 rounded-2xl border border-blue-100 p-5 flex flex-col justify-between min-h-[110px]">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-blue-700 uppercase tracking-widest">Total Penjualan</p>
+                    <div class="p-2 bg-blue-100 rounded-lg text-blue-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-blue-700 leading-tight">{{ $this->formatRupiah($totalHargaKeluar) }}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">Nilai barang keluar (penjualan)</p>
+                </div>
+            </div>
+
+            <!-- Laba Kotor -->
+            <div class="bg-teal-50/50 rounded-2xl border border-teal-100 p-5 flex flex-col justify-between min-h-[110px]">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-teal-700 uppercase tracking-widest">Laba Kotor</p>
+                    <div class="p-2 bg-teal-100 rounded-lg text-teal-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-teal-700 leading-tight {{ $labaKotor < 0 ? 'text-red-600' : '' }}">{{ $this->formatRupiah($labaKotor) }}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">Margin {{ number_format($marginPersen, 1, ',', '.') }}%</p>
+                </div>
+            </div>
+
+            <!-- Nilai Stok -->
+            <div class="bg-indigo-50/50 rounded-2xl border border-indigo-100 p-5 flex flex-col justify-between min-h-[110px]">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-indigo-700 uppercase tracking-widest">Nilai Total Stok</p>
+                    <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-indigo-700 leading-tight">{{ $this->formatRupiah($nilaiStok) }}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">Stok × harga beli</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rincian Keuangan -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <!-- Pembelian per Supplier -->
+            <div class="rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Nilai Pembelian per Supplier</h4>
+                </div>
+                <div class="divide-y divide-slate-50">
+                    @forelse($pembelianPerSupplier as $row)
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mr-3">{{ substr($row->nama_supplier, 0, 1) }}</div>
+                            <p class="text-sm font-bold text-slate-800">{{ $row->nama_supplier }}</p>
+                        </div>
+                        <p class="text-sm font-black text-emerald-700">{{ $this->formatRupiah($row->total) }}</p>
+                    </div>
+                    @empty
+                    <div class="px-4 py-8 text-center">
+                        <p class="text-slate-400 italic text-sm">Belum ada data pembelian.</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Pembelian per Kategori -->
+            <div class="rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Nilai Pembelian per Kategori</h4>
+                </div>
+                <div class="divide-y divide-slate-50">
+                    @forelse($pembelianPerKategori as $row)
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold mr-3">{{ substr($row->nama_kategori, 0, 1) }}</div>
+                            <p class="text-sm font-bold text-slate-800">{{ $row->nama_kategori }}</p>
+                        </div>
+                        <p class="text-sm font-black text-slate-700">{{ $this->formatRupiah($row->total) }}</p>
+                    </div>
+                    @empty
+                    <div class="px-4 py-8 text-center">
+                        <p class="text-slate-400 italic text-sm">Belum ada data pembelian.</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Penjualan per Kategori -->
+            <div class="rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Nilai Penjualan per Kategori</h4>
+                </div>
+                <div class="divide-y divide-slate-50">
+                    @forelse($penjualanPerKategori as $row)
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold mr-3">{{ substr($row->nama_kategori, 0, 1) }}</div>
+                            <p class="text-sm font-bold text-slate-800">{{ $row->nama_kategori }}</p>
+                        </div>
+                        <p class="text-sm font-black text-blue-700">{{ $this->formatRupiah($row->total) }}</p>
+                    </div>
+                    @empty
+                    <div class="px-4 py-8 text-center">
+                        <p class="text-slate-400 italic text-sm">Belum ada data penjualan.</p>
+                    </div>
+                    @endforelse
                 </div>
             </div>
         </div>

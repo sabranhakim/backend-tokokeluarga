@@ -95,6 +95,26 @@ new class extends Component {
         $barang = Barang::find($barangId);
         return $barang ? $barang->stok : 0;
     }
+
+    public function getTotalHargaProperty()
+    {
+        if ($this->jenis_keluar !== 'penjualan') return 0;
+
+        $total = 0;
+        foreach ($this->items as $item) {
+            if (empty($item['barang_id'])) continue;
+            $barang = Barang::find($item['barang_id']);
+            if ($barang) {
+                $total += (float) $item['jumlah'] * (float) $barang->harga_jual;
+            }
+        }
+        return $total;
+    }
+
+    public function formatRupiah($value)
+    {
+        return 'Rp ' . number_format((float) $value, 0, ',', '.');
+    }
 };
 ?>
 
@@ -263,6 +283,15 @@ new class extends Component {
                                                class="w-full px-4 py-2 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                                         <span class="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-slate-400 uppercase pointer-events-none">{{ $satuanItem }}</span>
                                     </div>
+                                    @if($jenis_keluar === 'penjualan' && $barangTerpilih)
+                                        <div class="mt-1 text-xs text-slate-400">
+                                            Harga jual: <span class="font-bold text-slate-600">{{ $this->formatRupiah($barangTerpilih->harga_jual) }}</span>
+                                            / {{ $satuanItem }}
+                                        </div>
+                                        <div class="mt-0.5 text-xs font-bold text-blue-700">
+                                            Subtotal: {{ $this->formatRupiah((float) $item['jumlah'] * (float) $barangTerpilih->harga_jual) }}
+                                        </div>
+                                    @endif
                                     @error("items.$index.jumlah") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="md:col-span-6">
@@ -297,7 +326,24 @@ new class extends Component {
                         @error('general') <p class="mt-4 text-red-500 text-sm font-medium">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-6">
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Baris</p>
+                                <p class="text-lg font-black text-slate-800">{{ count($items) }}</p>
+                            </div>
+                            @if($jenis_keluar === 'penjualan')
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Harga Penjualan</p>
+                                <p class="text-xl font-black text-blue-700">{{ $this->formatRupiah($this->totalHarga) }}</p>
+                            </div>
+                            @else
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimasi Harga</p>
+                                <p class="text-lg font-black text-slate-500">{{ $this->formatRupiah(0) }} <span class="text-[10px] font-bold text-slate-400 normal-case">(hanya untuk penjualan)</span></p>
+                            </div>
+                            @endif
+                        </div>
                         <button type="submit"
                                 wire:loading.attr="disabled"
                                 wire:target="save"
@@ -391,6 +437,12 @@ new class extends Component {
                                 <td class="px-4 py-3 text-slate-500 uppercase">Total Jumlah Item</td>
                                 <td class="px-4 py-3 text-right text-slate-950 font-black">{{ $totalQty }}</td>
                             </tr>
+                            @if($jenis_keluar === 'penjualan')
+                            <tr>
+                                <td class="px-4 py-3 text-slate-500 uppercase">Total Harga Penjualan</td>
+                                <td class="px-4 py-3 text-right text-blue-700 font-black">{{ $this->formatRupiah($this->totalHarga) }}</td>
+                            </tr>
+                            @endif
                         </tfoot>
                     </table>
                 </div>
