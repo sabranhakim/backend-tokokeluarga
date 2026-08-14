@@ -256,6 +256,7 @@
                     <span class="ml-3">Log Aktivitas</span>
                 </a>
 
+                @can('manage users')
                 <a href="{{ route('users.index') }}" 
                    class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('users.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
                     <div class="p-2 rounded-lg {{ request()->routeIs('users.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
@@ -263,7 +264,9 @@
                     </div>
                     <span class="ml-3">Manajemen User</span>
                 </a>
+                @endcan
 
+                @can('manage roles')
                 <a href="{{ route('roles.index') }}" 
                    class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 group {{ request()->routeIs('roles.*') ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
                     <div class="p-2 rounded-lg {{ request()->routeIs('roles.*') ? 'bg-white shadow-sm text-blue-600' : 'bg-transparent text-slate-400 group-hover:text-slate-600' }}">
@@ -271,6 +274,7 @@
                     </div>
                     <span class="ml-3">Manajemen Role</span>
                 </a>
+                @endcan
             </nav>
 
             <!-- User Footer -->
@@ -281,7 +285,7 @@
                     </div>
                     <div class="ml-3 flex-1 overflow-hidden">
                         <p class="text-sm font-bold text-slate-800 truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
-                        <p class="text-[10px] text-slate-500 uppercase font-semibold">Administrator</p>
+                        <p class="text-[10px] uppercase font-semibold {{ auth()->user()->hasRole('owner') ? 'text-violet-500' : 'text-slate-500' }}">{{ ucfirst(auth()->user()->getRoleNames()->first() ?? 'Staff') }}</p>
                     </div>
                 </div>
             </div>

@@ -51,6 +51,7 @@ new class extends Component {
         $map = [
             'admin' => ['bg-rose-50', 'text-rose-700', 'border-rose-200'],
             'staff' => ['bg-sky-50', 'text-sky-700', 'border-sky-200'],
+            'owner' => ['bg-violet-50', 'text-violet-700', 'border-violet-200'],
         ];
         if (isset($map[$roleName])) {
             return $map[$roleName];
