@@ -3,6 +3,8 @@
 use Livewire\Component;
 use App\Models\Barang;
 use App\Models\BarangStok;
+use App\Models\BarangKeluar;
+use App\Models\StockMovement;
 use App\Models\PenerimaanBarang;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,7 @@ new class extends Component {
     public $selectedSupplierId = '';
     public $selectedMonth;
     public $selectedYear;
+    public $mutasiType = '';
 
     public function mount()
     {
@@ -86,6 +89,26 @@ new class extends Component {
             ->get();
     }
 
+    public function getBarangKeluarDataProperty()
+    {
+        return BarangKeluar::with(['user', 'detailBarangKeluars.barang'])
+            ->whereBetween('tgl_keluar', [$this->startDate, $this->endDate])
+            ->latest('tgl_keluar')
+            ->get();
+    }
+
+    public function getMutasiStokDataProperty()
+    {
+        return StockMovement::with(['barang', 'user'])
+            ->whereBetween('created_at', [
+                Carbon::parse($this->startDate)->startOfDay(),
+                Carbon::parse($this->endDate)->endOfDay(),
+            ])
+            ->when($this->mutasiType, fn($q) => $q->where('type', $this->mutasiType))
+            ->latest('created_at')
+            ->get();
+    }
+
     public function with()
     {
         return [
@@ -117,6 +140,14 @@ new class extends Component {
             class="px-4 py-2 rounded-lg text-sm font-bold transition-all {{ $activeTab === 'penerimaan_supplier' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
             Per Supplier
         </button>
+        <button wire:click="setTab('barang_keluar')"
+            class="px-4 py-2 rounded-lg text-sm font-bold transition-all {{ $activeTab === 'barang_keluar' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+            Barang Keluar
+        </button>
+        <button wire:click="setTab('mutasi_stok')"
+            class="px-4 py-2 rounded-lg text-sm font-bold transition-all {{ $activeTab === 'mutasi_stok' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+            Mutasi Stok
+        </button>
     </div>
 
     <!-- Filters Section -->
@@ -133,7 +164,7 @@ new class extends Component {
             </div>
         @endif
 
-        @if($activeTab === 'penerimaan_periode')
+        @if($activeTab === 'penerimaan_periode' || $activeTab === 'barang_keluar' || $activeTab === 'mutasi_stok')
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal Mulai</label>
                 <input type="date" wire:model.live="startDate" class="bg-slate-50 border-none rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
@@ -141,6 +172,17 @@ new class extends Component {
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal Selesai</label>
                 <input type="date" wire:model.live="endDate" class="bg-slate-50 border-none rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
+            </div>
+        @endif
+
+        @if($activeTab === 'mutasi_stok')
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Jenis Mutasi</label>
+                <select wire:model.live="mutasiType" class="bg-slate-50 border-none rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
+                    <option value="">Semua</option>
+                    <option value="in">Masuk</option>
+                    <option value="out">Keluar</option>
+                </select>
             </div>
         @endif
 
@@ -195,6 +237,16 @@ new class extends Component {
                         Export Excel
                     </a>
                 @endif
+            @elseif($activeTab === 'barang_keluar')
+                <a href="{{ route('laporan.export.barang-keluar', ['start' => $startDate, 'end' => $endDate]) }}" class="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-all">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export Excel
+                </a>
+            @elseif($activeTab === 'mutasi_stok')
+                <a href="{{ route('laporan.export.mutasi-stok', ['start' => $startDate, 'end' => $endDate, 'type' => $mutasiType]) }}" class="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-all">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export Excel
+                </a>
             @endif
 
         </div>
@@ -350,7 +402,7 @@ new class extends Component {
                             <td class="px-6 py-4 text-sm font-medium text-slate-800">
                                 <ul class="list-disc list-inside space-y-1">
                                     @foreach($row->detailPenerimaans as $detail)
-                                        <li>{{ $detail->barang->nama_barang }} ({{ $detail->jumlah_terima }} {{ $detail->barang->satuan }})</li>
+                                        <li>{{ $detail->barang->nama_barang }} ({{ $detail->jumlah }} {{ $detail->barang->satuan }})</li>
                                     @endforeach
                                 </ul>
                             </td>
@@ -364,6 +416,80 @@ new class extends Component {
                         <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 italic">
                             {{ $selectedSupplierId ? 'Tidak ada riwayat penerimaan untuk supplier ini.' : 'Silakan pilih supplier untuk melihat laporan.' }}
                         </td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        @endif
+
+        @if($activeTab === 'barang_keluar')
+            <table class="w-full text-left">
+                <thead class="bg-slate-50/50 border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">No. Keluar</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Tgl Keluar</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Jenis</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Petugas</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Detail Barang</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Total Item</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($this->barangKeluarData as $row)
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-4 font-mono font-bold text-sm text-blue-600">{{ $row->no_keluar }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ $row->tgl_keluar->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-slate-100 text-slate-700">{{ $row->jenis_keluar_label }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ $row->user->name ?? '-' }}</td>
+                            <td class="px-6 py-4 text-sm font-medium text-slate-800">
+                                <ul class="list-disc list-inside space-y-1">
+                                    @foreach($row->detailBarangKeluars as $detail)
+                                        <li>{{ $detail->barang->nama_barang }} ({{ $detail->jumlah }} {{ $detail->barang->satuan }})</li>
+                                    @endforeach
+                                </ul>
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm font-bold text-slate-700">{{ $row->detailBarangKeluars->count() }} Item</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">Tidak ada data barang keluar pada periode ini.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        @endif
+
+        @if($activeTab === 'mutasi_stok')
+            <table class="w-full text-left">
+                <thead class="bg-slate-50/50 border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Tanggal</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Barang</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Tipe</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Jumlah</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Stok Sebelum</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Stok Setelah</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Alasan</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Petugas</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($this->mutasiStokData as $row)
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ $row->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-6 py-4 font-bold text-sm text-slate-800">{{ $row->barang->nama_barang ?? 'Barang tidak diketahui' }}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase {{ $row->type === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
+                                    {{ $row->type === 'in' ? 'Masuk' : 'Keluar' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm font-bold text-slate-700">{{ $row->quantity }}</td>
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ $row->before_quantity }}</td>
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ $row->after_quantity }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ $row->reason ?? '-' }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ $row->user->name ?? '-' }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="px-6 py-10 text-center text-slate-400 italic">Tidak ada mutasi stok pada periode ini.</td></tr>
                     @endforelse
                 </tbody>
             </table>

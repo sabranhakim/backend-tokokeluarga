@@ -72,12 +72,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('supplier', SupplierController::class);
     Route::resource('kategori', KategoriController::class);
 
-    Route::prefix('laporan')->name('laporan.')->group(function () {
+    Route::prefix('laporan')->name('laporan.')->middleware('can:manage laporan')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/export/stok', [ReportController::class, 'exportStok'])->name('export.stok');
         Route::get('/export/kadaluarsa', [ReportController::class, 'exportKadaluarsa'])->name('export.kadaluarsa');
         Route::get('/export/penerimaan-periode', [ReportController::class, 'exportPenerimaanPeriode'])->name('export.penerimaan-periode');
         Route::get('/export/penerimaan-supplier', [ReportController::class, 'exportPenerimaanSupplier'])->name('export.penerimaan-supplier');
+        Route::get('/export/barang-keluar', [ReportController::class, 'exportBarangKeluar'])->name('export.barang-keluar');
+        Route::get('/export/mutasi-stok', [ReportController::class, 'exportMutasiStok'])->name('export.mutasi-stok');
     });
 
     // Penerimaan Barang Routes
