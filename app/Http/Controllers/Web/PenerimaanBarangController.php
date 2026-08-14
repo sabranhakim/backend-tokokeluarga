@@ -31,6 +31,16 @@ class PenerimaanBarangController extends Controller
         return view('penerimaan.show', compact('penerimaanBarang'));
     }
 
+    public function edit(PenerimaanBarang $penerimaanBarang)
+    {
+        if ($penerimaanBarang->status_verifikasi !== 'pending') {
+            return redirect()->route('penerimaan.index')
+                ->with('error', 'Penerimaan yang sudah diverifikasi tidak dapat diedit.');
+        }
+
+        return view('penerimaan.edit', compact('penerimaanBarang'));
+    }
+
     public function trash()
     {
         return view('penerimaan.trash');

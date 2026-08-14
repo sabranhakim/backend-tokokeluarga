@@ -12,6 +12,12 @@
             @can('verify penerimaan')
                 <div class="flex items-center space-x-3">
                     @if($penerimaanBarang->status_verifikasi == 'pending')
+                    @can('create penerimaan')
+                    <a href="{{ route('penerimaan.edit', $penerimaanBarang) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Edit
+                    </a>
+                    @endcan
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                         <form action="{{ route('penerimaan.verify', $penerimaanBarang) }}" method="POST" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                             @csrf

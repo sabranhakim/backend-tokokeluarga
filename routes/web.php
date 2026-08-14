@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [PenerimaanBarangController::class, 'index'])->name('index');
         Route::get('/create', [PenerimaanBarangController::class, 'create'])->name('create');
         Route::get('/{penerimaanBarang}', [PenerimaanBarangController::class, 'show'])->name('show');
+        Route::get('/{penerimaanBarang}/edit', [PenerimaanBarangController::class, 'edit'])->name('edit');
         Route::patch('/{penerimaanBarang}/verify', [PenerimaanBarangController::class, 'verify'])->name('verify');
         Route::delete('/{penerimaanBarang}', [PenerimaanBarangController::class, 'destroy'])->name('destroy');
     });
@@ -124,4 +125,8 @@ Route::middleware('auth')->group(function () {
     Route::get('activity', function () {
         return view('activity.index');
     })->name('activity.index');
+
+    Route::get('faq', function () {
+        return view('faq.index');
+    })->name('faq.index');
 });

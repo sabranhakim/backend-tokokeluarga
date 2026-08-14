@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Jobs\ProcessPenerimaanFotoJob;
+use App\Models\PenerimaanBarang;
 use App\Models\Supplier;
 use App\Models\Barang;
 use App\Services\PenerimaanBarangService;
@@ -16,6 +17,8 @@ new class extends Component {
     public $supplier_id;
     public $tgl_terima;
     public $foto_bon;
+    public $penerimaanId = null;
+    public $existingFoto = null;
 
     public $items = [];
     public $showPreview = false;
@@ -36,15 +39,39 @@ new class extends Component {
         'items.*.barang_id.distinct' => 'Barang yang sama tidak boleh ditambahkan lebih dari satu kali dalam satu transaksi.',
     ];
 
-    public function mount()
+    public function mount($penerimaanId = null)
     {
         if (!Gate::allows('create penerimaan') && !auth()->user()->hasAnyRole(['admin', 'staff'])) {
             session()->flash('error', 'Anda tidak memiliki hak akses untuk menambah penerimaan.');
             return $this->redirect(route('dashboard'), navigate: true);
         }
-        $this->tgl_terima = date('Y-m-d');
-        $this->no_terima = 'Otomatis (dibuat oleh sistem)';
-        $this->addItem();
+        $this->penerimaanId = $penerimaanId;
+
+        if ($penerimaanId) {
+            $penerimaan = PenerimaanBarang::with(['supplier', 'detailPenerimaans.barang'])->findOrFail($penerimaanId);
+
+            if ($penerimaan->status_verifikasi !== 'pending') {
+                session()->flash('error', 'Penerimaan yang sudah diverifikasi tidak dapat diedit.');
+                return $this->redirect(route('penerimaan.index'), navigate: true);
+            }
+
+            $this->no_terima = $penerimaan->no_terima;
+            $this->supplier_id = $penerimaan->supplier_id;
+            $this->tgl_terima = $penerimaan->tgl_terima->format('Y-m-d');
+            $this->existingFoto = $penerimaan->foto_bon;
+            $this->items = $penerimaan->detailPenerimaans
+                ->map(fn($d) => [
+                    'barang_id' => $d->barang_id,
+                    'jumlah' => $d->jumlah,
+                    'batch_number' => $d->batch_number,
+                    'tgl_kadaluarsa' => $d->tgl_kadaluarsa ? $d->tgl_kadaluarsa->format('Y-m-d') : '',
+                ])
+                ->all();
+        } else {
+            $this->tgl_terima = date('Y-m-d');
+            $this->no_terima = 'Otomatis (dibuat oleh sistem)';
+            $this->addItem();
+        }
     }
 
     public function addItem()
@@ -123,12 +150,14 @@ new class extends Component {
         $validated = $this->validate();
 
         // Jika no_terima masih placeholder, biarkan server yang generate (TRM-...)
-        if (blank($validated['no_terima']) || $validated['no_terima'] === 'Otomatis (dibuat oleh sistem)') {
+        if (!$this->penerimaanId && (blank($validated['no_terima']) || $validated['no_terima'] === 'Otomatis (dibuat oleh sistem)')) {
             $validated['no_terima'] = null;
         }
 
         try {
-            $penerimaan = $service->store($validated);
+            $penerimaan = $this->penerimaanId
+                ? $service->update($this->penerimaanId, $validated)
+                : $service->store($validated);
 
             if ($this->foto_bon) {
                 $ext = $this->foto_bon->getClientOriginalExtension();
@@ -138,9 +167,13 @@ new class extends Component {
                 ProcessPenerimaanFotoJob::dispatch($penerimaan->getKey(), $tempPath);
             }
 
-            $msg = $this->foto_bon
-                ? 'Penerimaan barang berhasil disimpan. Foto sedang diproses di background.'
-                : 'Penerimaan barang berhasil disimpan.';
+            $msg = $this->penerimaanId
+                ? ($this->foto_bon
+                    ? 'Penerimaan barang berhasil diperbarui. Foto sedang diproses di background.'
+                    : 'Penerimaan barang berhasil diperbarui.')
+                : ($this->foto_bon
+                    ? 'Penerimaan barang berhasil disimpan. Foto sedang diproses di background.'
+                    : 'Penerimaan barang berhasil disimpan.');
             session()->flash('success', $msg);
             return redirect()->route('penerimaan.index');
         } catch (\Exception $e) {
@@ -288,6 +321,12 @@ new class extends Component {
                                 <button type="button" wire:click="$set('foto_bon', null)" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg hover:bg-rose-600 transition-colors">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
+                            </div>
+                        @elseif ($existingFoto)
+                            <div class="mt-4 relative inline-block group">
+                                <div class="absolute inset-0 bg-slate-900/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <img src="{{ $existingFoto }}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-100">
+                                <span class="absolute bottom-0 left-0 right-0 text-[9px] font-bold text-white bg-slate-900/60 text-center py-0.5 rounded-b-lg">Foto lama</span>
                             </div>
                         @endif
                         @error('foto_bon') <span class="text-red-500 text-xs font-medium mt-1 block">{{ $message }}</span> @enderror
@@ -470,8 +509,8 @@ new class extends Component {
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center disabled:opacity-70 disabled:cursor-not-allowed">
 
                             <span wire:loading.remove wire:target="save" class="flex items-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                                Simpan Penerimaan
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                                {{ $penerimaanId ? 'Simpan Perubahan' : 'Simpan Penerimaan' }}
                             </span>
 
                             <span wire:loading wire:target="save" class="flex items-center">
@@ -527,6 +566,10 @@ new class extends Component {
                         @if($foto_bon)
                             <div class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 h-32 w-full max-w-[200px] shadow-inner flex items-center justify-center">
                                 <img src="{{ $foto_bon->temporaryUrl() }}" class="h-full w-full object-cover">
+                            </div>
+                        @elseif($existingFoto)
+                            <div class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 h-32 w-full max-w-[200px] shadow-inner flex items-center justify-center">
+                                <img src="{{ $existingFoto }}" class="h-full w-full object-cover">
                             </div>
                         @else
                             <div class="rounded-xl border border-slate-200 border-dashed bg-slate-50/50 h-32 w-full max-w-[200px] flex flex-col items-center justify-center text-slate-400 text-xs">
@@ -612,7 +655,7 @@ new class extends Component {
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Konfirmasi & Simpan
+                    {{ $penerimaanId ? 'Konfirmasi & Perbarui' : 'Konfirmasi & Simpan' }}
                 </button>
             </div>
         </div>

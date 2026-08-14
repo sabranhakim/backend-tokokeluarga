@@ -8,4 +8,16 @@
 @theme {
     --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-blue-50: #eaf1ff;
+    --color-blue-100: #d6e4ff;
+    --color-blue-200: #b0caff;
+    --color-blue-300: #85abfd;
+    --color-blue-400: #5c8bfa;
+    --color-blue-500: #3a6bf2;
+    --color-blue-600: #1f4fd9;
+    --color-blue-700: #1a41b5;
+    --color-blue-800: #193893;
+    --color-blue-900: #182f76;
+    --color-blue-950: #0f1e4f;
 }

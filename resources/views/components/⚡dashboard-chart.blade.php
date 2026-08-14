@@ -64,12 +64,12 @@ new class extends Component
                 [
                     'label' => 'Jumlah Penerimaan',
                     'data' => $data,
-                    'borderColor' => '#2563eb',
-                    'backgroundColor' => 'rgba(37, 99, 235, 0.1)',
+                    'borderColor' => '#1f4fd9',
+                    'backgroundColor' => 'rgba(31, 79, 217, 0.1)',
                     'fill' => true,
                     'tension' => 0.4,
                     'pointRadius' => 4,
-                    'pointBackgroundColor' => '#2563eb',
+                    'pointBackgroundColor' => '#1f4fd9',
                 ]
             ]
         ];

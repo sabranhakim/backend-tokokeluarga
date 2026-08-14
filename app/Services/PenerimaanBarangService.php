@@ -18,14 +18,10 @@ class PenerimaanBarangService
 {
     protected $cloudinaryService;
 
-    protected $whatsappService;
-
     public function __construct(
         CloudinaryService $cloudinaryService,
-        WhatsAppService $whatsappService,
     ) {
         $this->cloudinaryService = $cloudinaryService;
-        $this->whatsappService = $whatsappService;
     }
 
     /**
@@ -77,9 +73,64 @@ class PenerimaanBarangService
                     $users,
                     new NewPenerimaanNotification($penerimaan),
                 );
+
+                // WhatsApp Notification to Supplier (sent right after input)
+                $this->dispatchWhatsAppNotification($penerimaan);
             });
 
             return $penerimaan;
+        });
+    }
+
+    /**
+     * Update a pending (unverified) penerimaan barang along with its details.
+     * Verified penerimaan cannot be edited.
+     *
+     * @param  mixed  $file
+     * @return PenerimaanBarang
+     */
+    public function update(string $id, array $data, $file = null)
+    {
+        return DB::transaction(function () use ($id, $data, $file) {
+            $penerimaan = PenerimaanBarang::with("detailPenerimaans")->findOrFail($id);
+
+            if ($penerimaan->status_verifikasi !== "pending") {
+                throw new \Exception(
+                    "Penerimaan barang sudah diverifikasi dan tidak dapat diedit.",
+                );
+            }
+
+            $fotoBonUrl = $penerimaan->foto_bon;
+            if ($file) {
+                $fotoBonUrl = $this->cloudinaryService->upload($file);
+            }
+
+            // 1. Update PenerimaanBarang Header
+            $penerimaan->update([
+                "supplier_id" => $data["supplier_id"],
+                "tgl_terima" => $data["tgl_terima"],
+                "foto_bon" => $fotoBonUrl,
+            ]);
+
+            // 2. Replace details (Stock is NOT updated yet, waiting for verification)
+            DetailPenerimaan::where(
+                "penerimaan_barang_id",
+                $penerimaan->getKey(),
+            )->delete();
+            foreach ($data["items"] as $item) {
+                DetailPenerimaan::create([
+                    "penerimaan_barang_id" => $penerimaan->getKey(),
+                    "barang_id" => $item["barang_id"],
+                    "jumlah" => $item["jumlah"],
+                    "batch_number" => !empty($item["batch_number"]) ? $item["batch_number"] : null,
+                    "tgl_kadaluarsa" => !empty($item["tgl_kadaluarsa"]) ? $item["tgl_kadaluarsa"] : null,
+                ]);
+            }
+
+            // No notification is re-sent here. Notification stays after the
+            // initial input (store), not after verification.
+
+            return $penerimaan->fresh(["supplier", "user", "detailPenerimaans.barang"]);
         });
     }
 
@@ -170,19 +221,14 @@ class PenerimaanBarangService
                     );
             }
 
-            // After commit, send notification to supplier
-            DB::afterCommit(function () use ($penerimaan) {
-                $this->dispatchVerificationWhatsAppJob($penerimaan);
-            });
-
             return $penerimaan;
         });
     }
 
     /**
-     * Dispatch Verification WhatsApp Notification Job.
+     * Dispatch WhatsApp Notification Job to supplier.
      */
-    protected function dispatchVerificationWhatsAppJob(
+    protected function dispatchWhatsAppNotification(
         PenerimaanBarang $penerimaan,
     ): void {
         $supplier = $penerimaan->supplier;
@@ -205,9 +251,9 @@ class PenerimaanBarangService
         }
 
         $message =
-            "✅ *PENERIMAAN BERHASIL*\n\n" .
+            "📦 *PENERIMAAN BARANG DICATAT*\n\n" .
             "Halo *{$supplier->nama_supplier}*,\n" .
-            "Kami menginformasikan bahwa pengiriman barang Anda telah sampai ke toko kami.\n\n" .
+            "Kami menginformasikan bahwa pengiriman barang Anda telah diterima.\n\n" .
             "Detail:\n" .
             "📄 No. Terima: *{$penerimaan->no_terima}*\n" .
             "📅 Tgl Masuk: " .

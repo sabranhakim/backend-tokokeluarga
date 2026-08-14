@@ -85,7 +85,7 @@
         }
         body {
             font-family: 'Work Sans', sans-serif;
-            background-color: #eff6ff;
+            background-color: #eaf1ff;
             color: #1c1c19;
         }
         h1, h2, h3, .headline {
