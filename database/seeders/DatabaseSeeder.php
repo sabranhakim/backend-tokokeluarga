@@ -82,83 +82,49 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@tokokeluarga.com'],
-            ['name' => 'Administrator', 'password' => Hash::make('password123')]
+            ['name' => 'Husni', 'password' => Hash::make('password123')]
         );
         $admin->assignRole($adminRole);
 
         $staff = User::firstOrCreate(
             ['email' => 'staff@tokokeluarga.com'],
-            ['name' => 'Staff Gudang', 'password' => Hash::make('password123')]
+            ['name' => 'Cindy', 'password' => Hash::make('password123')]
         );
         $staff->assignRole($staffRole);
 
         $kategoriList = [
-            ['nama_kategori' => 'Tepung & Gandum', 'barangs' => [
-                ['nama_barang' => 'Tepung Terigu Segitiga Biru', 'satuan' => 'Karung', 'isi' => 25, 'harga_beli' => 130000, 'harga_jual' => 145000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Tepung Terigu Cakra Kembar', 'satuan' => 'Karung', 'isi' => 25, 'harga_beli' => 140000, 'harga_jual' => 155000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Tepung Beras Rose Brand', 'satuan' => 'Karung', 'isi' => 10, 'harga_beli' => 95000, 'harga_jual' => 110000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Tepung Tapioka Gunung Agung', 'satuan' => 'Karung', 'isi' => 25, 'harga_beli' => 115000, 'harga_jual' => 130000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Gandum Utuh', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 12000, 'harga_jual' => 15000, 'stok_minimal' => 20],
+            ['nama_kategori' => 'Bolu & Cake', 'barangs' => [
+                ['nama_barang' => 'BOLU ALPELLA / AROMA 6*24', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 85000, 'harga_jual' => 95000, 'stok_minimal' => 5],
+                ['nama_barang' => 'BOLU CINTA', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 75000, 'harga_jual' => 85000, 'stok_minimal' => 5],
             ]],
-            ['nama_kategori' => 'Gula & Pemanis', 'barangs' => [
-                ['nama_barang' => 'Gula Pasir Gulaku', 'satuan' => 'Karung', 'isi' => 50, 'harga_beli' => 650000, 'harga_jual' => 700000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Gula Halus', 'satuan' => 'Karung', 'isi' => 25, 'harga_beli' => 340000, 'harga_jual' => 370000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Gula Merah Aren', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 22000, 'harga_jual' => 28000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Madu Murni', 'satuan' => 'Botol', 'isi' => 1, 'harga_beli' => 45000, 'harga_jual' => 55000, 'stok_minimal' => 10],
+            ['nama_kategori' => 'Cookies & Kue Kering', 'barangs' => [
+                ['nama_barang' => 'BUTTER COOKIES ANEKA', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 95000, 'harga_jual' => 110000, 'stok_minimal' => 5],
             ]],
-            ['nama_kategori' => 'Minyak & Lemak', 'barangs' => [
-                ['nama_barang' => 'Minyak Goreng Sania', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 180000, 'harga_jual' => 205000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Minyak Goreng Bimoli', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 230000, 'harga_jual' => 260000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Mentega Blue Band', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 280000, 'harga_jual' => 310000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Butter Anchor', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 350000, 'harga_jual' => 390000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Shortening', 'satuan' => 'Karung', 'isi' => 15, 'harga_beli' => 320000, 'harga_jual' => 355000, 'stok_minimal' => 3],
-            ]],
-            ['nama_kategori' => 'Bumbu & Rempah', 'barangs' => [
-                ['nama_barang' => 'Garam Halus Refina', 'satuan' => 'Karung', 'isi' => 25, 'harga_beli' => 50000, 'harga_jual' => 65000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Vanili Bubuk', 'satuan' => 'Botol', 'isi' => 1, 'harga_beli' => 15000, 'harga_jual' => 20000, 'stok_minimal' => 20],
-                ['nama_barang' => 'Baking Powder Koepoe', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 85000, 'harga_jual' => 105000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Soda Kue', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 75000, 'harga_jual' => 95000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Cinnamon Powder', 'satuan' => 'Botol', 'isi' => 1, 'harga_beli' => 18000, 'harga_jual' => 25000, 'stok_minimal' => 10],
-            ]],
-            ['nama_kategori' => 'Cokelat & Selai', 'barangs' => [
-                ['nama_barang' => 'Cokelat Batang Tulip', 'satuan' => 'Dus', 'isi' => 20, 'harga_beli' => 280000, 'harga_jual' => 320000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Cokelat Bubuk Van Houten', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 240000, 'harga_jual' => 275000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Selai Strawberry', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 150000, 'harga_jual' => 180000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Selai Nanas', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 130000, 'harga_jual' => 160000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Pasta Cokelat', 'satuan' => 'Botol', 'isi' => 1, 'harga_beli' => 25000, 'harga_jual' => 35000, 'stok_minimal' => 10],
-            ]],
-            ['nama_kategori' => 'Susu & Keju', 'barangs' => [
-                ['nama_barang' => 'Susu Cair UHT', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 140000, 'harga_jual' => 165000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Susu Bubuk Full Cream', 'satuan' => 'Kaleng', 'isi' => 1, 'harga_beli' => 35000, 'harga_jual' => 45000, 'stok_minimal' => 15],
-                ['nama_barang' => 'Keju Cheddar Craft', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 380000, 'harga_jual' => 420000, 'stok_minimal' => 3],
-                ['nama_barang' => 'Keju Mozzarella', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 85000, 'harga_jual' => 105000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Whipped Cream', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 210000, 'harga_jual' => 245000, 'stok_minimal' => 3],
-            ]],
-            ['nama_kategori' => 'Telur & Daging', 'barangs' => [
-                ['nama_barang' => 'Telur Ayam Negeri', 'satuan' => 'Papan', 'isi' => 30, 'harga_beli' => 46000, 'harga_jual' => 53000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Telur Bebek', 'satuan' => 'Papan', 'isi' => 30, 'harga_beli' => 55000, 'harga_jual' => 65000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Daging Sapi Giling', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 90000, 'harga_jual' => 110000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Daging Ayam Fillet', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 32000, 'harga_jual' => 40000, 'stok_minimal' => 15],
+            ['nama_kategori' => 'Bakpao', 'barangs' => [
+                ['nama_barang' => 'Bakpao Kacang Padi', 'satuan' => 'Pack', 'isi' => 10, 'harga_beli' => 25000, 'harga_jual' => 32000, 'stok_minimal' => 10],
             ]],
             ['nama_kategori' => 'Plastik & Packaging', 'barangs' => [
-                ['nama_barang' => 'Plastik PE Ukuran 1/4 Kg', 'satuan' => 'Pak', 'isi' => 100, 'harga_beli' => 12000, 'harga_jual' => 18000, 'stok_minimal' => 30],
-                ['nama_barang' => 'Plastik PE Ukuran 1/2 Kg', 'satuan' => 'Pak', 'isi' => 100, 'harga_beli' => 15000, 'harga_jual' => 22000, 'stok_minimal' => 30],
-                ['nama_barang' => 'Kotak Kue Ukuran 20 cm', 'satuan' => 'Pak', 'isi' => 50, 'harga_beli' => 35000, 'harga_jual' => 45000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Paper Bag Kecil', 'satuan' => 'Pak', 'isi' => 50, 'harga_beli' => 18000, 'harga_jual' => 25000, 'stok_minimal' => 20],
-                ['nama_barang' => 'Pita Kue', 'satuan' => 'Roll', 'isi' => 1, 'harga_beli' => 5000, 'harga_jual' => 10000, 'stok_minimal' => 50],
+                ['nama_barang' => 'Balon 10x20', 'satuan' => 'Pack', 'isi' => 100, 'harga_beli' => 15000, 'harga_jual' => 22000, 'stok_minimal' => 20],
             ]],
-            ['nama_kategori' => 'Peralatan Bakery', 'barangs' => [
-                ['nama_barang' => 'Loyang Bulat 22 cm', 'satuan' => 'Pcs', 'isi' => 1, 'harga_beli' => 25000, 'harga_jual' => 35000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Loyang Persegi 20x20', 'satuan' => 'Pcs', 'isi' => 1, 'harga_beli' => 22000, 'harga_jual' => 30000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Whisk (Kocokan)', 'satuan' => 'Pcs', 'isi' => 1, 'harga_beli' => 15000, 'harga_jual' => 22000, 'stok_minimal' => 15],
-                ['nama_barang' => 'Spatula Silikon', 'satuan' => 'Pcs', 'isi' => 1, 'harga_beli' => 12000, 'harga_jual' => 18000, 'stok_minimal' => 20],
-                ['nama_barang' => 'Kertas Roti', 'satuan' => 'Roll', 'isi' => 1, 'harga_beli' => 8000, 'harga_jual' => 12000, 'stok_minimal' => 30],
+            ['nama_kategori' => 'Bangkit', 'barangs' => [
+                ['nama_barang' => 'Bangkit Cincin Laura', 'satuan' => 'Pack', 'isi' => 12, 'harga_beli' => 18000, 'harga_jual' => 25000, 'stok_minimal' => 10],
+                ['nama_barang' => 'Bangkit FL', 'satuan' => 'Pack', 'isi' => 12, 'harga_beli' => 16000, 'harga_jual' => 22000, 'stok_minimal' => 10],
+                ['nama_barang' => 'Bangkit Pandan', 'satuan' => 'Pack', 'isi' => 12, 'harga_beli' => 17000, 'harga_jual' => 23000, 'stok_minimal' => 10],
             ]],
-            ['nama_kategori' => 'Minuman', 'barangs' => [
-                ['nama_barang' => 'Kopi Bubuk Kapal Api', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 180000, 'harga_jual' => 210000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Teh Celup Sosro', 'satuan' => 'Dus', 'isi' => 100, 'harga_beli' => 35000, 'harga_jual' => 45000, 'stok_minimal' => 10],
-                ['nama_barang' => 'Sirup Marjan', 'satuan' => 'Dus', 'isi' => 12, 'harga_beli' => 160000, 'harga_jual' => 190000, 'stok_minimal' => 5],
-                ['nama_barang' => 'Air Mineral 600ml', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 30000, 'harga_jual' => 40000, 'stok_minimal' => 15],
+            ['nama_kategori' => 'Apetito', 'barangs' => [
+                ['nama_barang' => 'Apetito 8*10 DUS', 'satuan' => 'Dus', 'isi' => 24, 'harga_beli' => 65000, 'harga_jual' => 78000, 'stok_minimal' => 5],
+            ]],
+            ['nama_kategori' => 'Arai', 'barangs' => [
+                ['nama_barang' => 'Arai Sala Buyuang Kg', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 35000, 'harga_jual' => 45000, 'stok_minimal' => 10],
+                ['nama_barang' => 'Arai Pinang Kg', 'satuan' => 'Kg', 'isi' => 1, 'harga_beli' => 32000, 'harga_jual' => 42000, 'stok_minimal' => 10],
+                ['nama_barang' => 'Arai Pinang 500gr Pack', 'satuan' => 'Pack', 'isi' => 2, 'harga_beli' => 18000, 'harga_jual' => 25000, 'stok_minimal' => 10],
+            ]],
+            ['nama_kategori' => 'Archis', 'barangs' => [
+                ['nama_barang' => 'Archis SB Sedang BAL', 'satuan' => 'Bal', 'isi' => 1, 'harga_beli' => 120000, 'harga_jual' => 140000, 'stok_minimal' => 3],
+                ['nama_barang' => 'Archis Sinar Bintang Super BAL', 'satuan' => 'Bal', 'isi' => 1, 'harga_beli' => 150000, 'harga_jual' => 175000, 'stok_minimal' => 3],
+                ['nama_barang' => 'Archis SB Grade II BAL', 'satuan' => 'Bal', 'isi' => 1, 'harga_beli' => 95000, 'harga_jual' => 115000, 'stok_minimal' => 3],
+                ['nama_barang' => 'Archis Cinta Rasa 1000 Tim', 'satuan' => 'Tim', 'isi' => 1000, 'harga_beli' => 80000, 'harga_jual' => 95000, 'stok_minimal' => 5],
+                ['nama_barang' => 'Archis Gelas Cinta Rasa Tim', 'satuan' => 'Tim', 'isi' => 1, 'harga_beli' => 75000, 'harga_jual' => 90000, 'stok_minimal' => 5],
             ]],
         ];
 
@@ -204,26 +170,26 @@ class DatabaseSeeder extends Seeder
                 ['barang_idx' => 6, 'jumlah' => 3, 'batch' => 'BATCH-005', 'exp' => '+5 months'],
             ]],
             ['supplier_idx' => 2, 'tgl' => '-6 weeks', 'details' => [
-                ['barang_idx' => 10, 'jumlah' => 12, 'batch' => 'BATCH-006', 'exp' => '+7 months'],
-                ['barang_idx' => 11, 'jumlah' => 6, 'batch' => 'BATCH-007', 'exp' => '+9 months'],
-                ['barang_idx' => 12, 'jumlah' => 4, 'batch' => 'BATCH-008', 'exp' => '+11 months'],
+                ['barang_idx' => 9, 'jumlah' => 12, 'batch' => 'BATCH-006', 'exp' => '+7 months'],
+                ['barang_idx' => 10, 'jumlah' => 6, 'batch' => 'BATCH-007', 'exp' => '+9 months'],
+                ['barang_idx' => 11, 'jumlah' => 4, 'batch' => 'BATCH-008', 'exp' => '+11 months'],
             ]],
             ['supplier_idx' => 3, 'tgl' => '-1 month', 'details' => [
-                ['barang_idx' => 15, 'jumlah' => 20, 'batch' => 'BATCH-009', 'exp' => '+12 months'],
-                ['barang_idx' => 16, 'jumlah' => 10, 'batch' => 'BATCH-010', 'exp' => '+6 months'],
+                ['barang_idx' => 12, 'jumlah' => 20, 'batch' => 'BATCH-009', 'exp' => '+12 months'],
+                ['barang_idx' => 13, 'jumlah' => 10, 'batch' => 'BATCH-010', 'exp' => '+6 months'],
             ]],
             ['supplier_idx' => 0, 'tgl' => '-2 weeks', 'details' => [
                 ['barang_idx' => 0, 'jumlah' => 5, 'batch' => 'BATCH-011', 'exp' => '+7 months'],
                 ['barang_idx' => 3, 'jumlah' => 10, 'batch' => 'BATCH-012', 'exp' => '+9 months'],
             ]],
             ['supplier_idx' => 4, 'tgl' => '-10 days', 'details' => [
-                ['barang_idx' => 20, 'jumlah' => 8, 'batch' => 'BATCH-013', 'exp' => '+8 months'],
-                ['barang_idx' => 21, 'jumlah' => 6, 'batch' => 'BATCH-014', 'exp' => '+5 months'],
-                ['barang_idx' => 22, 'jumlah' => 4, 'batch' => 'BATCH-015', 'exp' => '+6 months'],
+                ['barang_idx' => 14, 'jumlah' => 8, 'batch' => 'BATCH-013', 'exp' => '+8 months'],
+                ['barang_idx' => 15, 'jumlah' => 6, 'batch' => 'BATCH-014', 'exp' => '+5 months'],
+                ['barang_idx' => 16, 'jumlah' => 4, 'batch' => 'BATCH-015', 'exp' => '+6 months'],
             ]],
-            ['supplier_idx' => 5, 'tgl' => '-5 days', 'details' => [
-                ['barang_idx' => 25, 'jumlah' => 15, 'batch' => 'BATCH-016', 'exp' => '+10 months'],
-                ['barang_idx' => 26, 'jumlah' => 12, 'batch' => 'BATCH-017', 'exp' => '+7 months'],
+            ['supplier_idx' => 1, 'tgl' => '-5 days', 'details' => [
+                ['barang_idx' => 5, 'jumlah' => 15, 'batch' => 'BATCH-016', 'exp' => '+10 months'],
+                ['barang_idx' => 6, 'jumlah' => 12, 'batch' => 'BATCH-017', 'exp' => '+7 months'],
             ]],
         ];
 
@@ -292,16 +258,16 @@ class DatabaseSeeder extends Seeder
                 ['barang_idx' => 2, 'jumlah' => 6],
             ], 'ket' => 'Supplier A'],
             ['tgl' => '-1 week', 'jenis' => 'kerusakan', 'items' => [
-                ['barang_idx' => 15, 'jumlah' => 8],
-                ['barang_idx' => 20, 'jumlah' => 3],
+                ['barang_idx' => 12, 'jumlah' => 8],
+                ['barang_idx' => 14, 'jumlah' => 3],
             ], 'ket' => 'Barang rusak saat pengiriman'],
             ['tgl' => '-3 days', 'jenis' => 'penjualan', 'items' => [
-                ['barang_idx' => 25, 'jumlah' => 5],
-                ['barang_idx' => 26, 'jumlah' => 4],
-                ['barang_idx' => 11, 'jumlah' => 3],
+                ['barang_idx' => 5, 'jumlah' => 5],
+                ['barang_idx' => 6, 'jumlah' => 4],
+                ['barang_idx' => 10, 'jumlah' => 3],
             ], 'ket' => 'Restock harian'],
             ['tgl' => '-1 day', 'jenis' => 'pemakaian_internal', 'items' => [
-                ['barang_idx' => 12, 'jumlah' => 2],
+                ['barang_idx' => 11, 'jumlah' => 2],
             ], 'ket' => 'Pemakaian untuk produksi kue'],
         ];
 
@@ -368,7 +334,7 @@ class DatabaseSeeder extends Seeder
             ], 'ket' => 'Reject dari pabrik'],
             ['supplier_idx' => 2, 'tgl' => '-1 week', 'items' => [
                 ['barang_idx' => 10, 'jumlah' => 2],
-                ['barang_idx' => 12, 'jumlah' => 1],
+                ['barang_idx' => 11, 'jumlah' => 1],
             ], 'ket' => 'Kemasan rusak saat diterima'],
         ];
 
@@ -434,8 +400,8 @@ class DatabaseSeeder extends Seeder
                 ['barang_idx' => 5, 'jumlah' => 2],
             ], 'ket' => 'Kualitas tidak sesuai pesanan'],
             ['tgl' => '-4 days', 'pelanggan' => null, 'items' => [
-                ['barang_idx' => 20, 'jumlah' => 1],
-                ['barang_idx' => 11, 'jumlah' => 1],
+                ['barang_idx' => 14, 'jumlah' => 1],
+                ['barang_idx' => 10, 'jumlah' => 1],
             ], 'ket' => 'Barang lewat kedaluwarsa'],
         ];
 
@@ -497,7 +463,7 @@ class DatabaseSeeder extends Seeder
         $opnameSelesaiItems = [
             ['barang_idx' => 0, 'fisik' => 2],
             ['barang_idx' => 5, 'fisik' => 1],
-            ['barang_idx' => 15, 'fisik' => 3],
+            ['barang_idx' => 12, 'fisik' => 3],
         ];
 
         $totalSelisihOpname = 0;
@@ -584,7 +550,7 @@ class DatabaseSeeder extends Seeder
             'status' => 'draft',
         ]);
 
-        foreach ([['barang_idx' => 10, 'fisik' => 4], ['barang_idx' => 25, 'fisik' => 6]] as $odi) {
+        foreach ([['barang_idx' => 10, 'fisik' => 4], ['barang_idx' => 5, 'fisik' => 6]] as $odi) {
             $barang = $barangs[$odi['barang_idx']];
             $stokSistem = (int) $barang->stok;
             $stokFisik = $odi['fisik'];
