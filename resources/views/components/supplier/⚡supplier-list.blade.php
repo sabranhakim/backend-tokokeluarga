@@ -137,7 +137,7 @@ new class extends Component {
             return;
         }
         try {
-            Supplier::withoutGlobalScope('active')->destroy($id);
+            Supplier::withoutGlobalScope('active')->find($id)?->delete();
             $this->dispatch('notify', 'Supplier berhasil dihapus');
         } catch (\Exception $e) {
             $this->dispatch('notify', 'Supplier tidak dapat dihapus karena masih memiliki riwayat transaksi.');

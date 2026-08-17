@@ -237,7 +237,7 @@ new class extends Component {
             $this->dispatch('notify', 'Anda tidak memiliki hak akses untuk menghapus barang.');
             return;
         }
-        Barang::withoutGlobalScope('active')->destroy($id);
+        Barang::withoutGlobalScope('active')->find($id)?->delete();
         $this->dispatch('notify', 'Barang berhasil dihapus');
     }
 };

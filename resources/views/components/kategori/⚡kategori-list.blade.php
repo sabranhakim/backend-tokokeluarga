@@ -116,7 +116,7 @@ new class extends Component {
             return;
         }
         try {
-            Kategori::withoutGlobalScope('active')->destroy($id);
+            Kategori::withoutGlobalScope('active')->find($id)?->delete();
             $this->dispatch('notify', 'Kategori berhasil dihapus');
         } catch (\Exception $e) {
             $this->dispatch('notify', 'Kategori tidak dapat dihapus karena masih digunakan oleh barang.');
