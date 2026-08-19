@@ -66,7 +66,7 @@ new class extends Component {
         <div class="relative z-10 w-full flex flex-col justify-center px-14 xl:px-20 py-12">
             <div class="flex items-center gap-3 mb-12">
                 <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                    <svg class="w-6 h-6 text-[#1f4fd9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    <svg class="w-6 h-6 text-[#1f4fd9]" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
                 </div>
                 <span class="text-xl font-extrabold tracking-tight text-white">Toko Grosir<span class="text-amber-300"> Kue Keluarga</span></span>
             </div>
@@ -89,7 +89,7 @@ new class extends Component {
         <!-- Mobile brand -->
         <div class="lg:hidden absolute top-6 left-6 flex items-center gap-2.5">
             <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
             </div>
             <span class="text-lg font-extrabold tracking-tight text-slate-800">Toko<span class="text-blue-600">Keluarga</span></span>
         </div>
@@ -98,7 +98,7 @@ new class extends Component {
             <div class="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/60 border border-slate-100">
                 <div class="text-center mb-8">
                     <div class="mx-auto mb-5 w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
-                        <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        <svg class="w-7 h-7 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
                     </div>
                     <h2 class="text-2xl font-bold text-slate-900">Welcome Back</h2>
                     <p class="text-sm text-slate-500 mt-1">Masuk untuk mengelola stok toko</p>

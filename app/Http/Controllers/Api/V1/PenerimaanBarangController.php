@@ -36,11 +36,14 @@ class PenerimaanBarangController extends Controller
      */
     public function store(StorePenerimaanBarangRequest $request): JsonResponse
     {
-        $file = $request->file('foto_bon');
+        $files = collect($request->allFiles())
+            ->sortBy(fn ($file, $key) => $key === 'foto_bon' ? 0 : (int) str_replace('foto_bon_', '', $key))
+            ->values()
+            ->all();
         $data = $request->validated();
 
         try {
-            $penerimaan = $this->penerimaanService->store($data, $file);
+            $penerimaan = $this->penerimaanService->store($data, $files);
 
             return response()->json([
                 'success' => true,

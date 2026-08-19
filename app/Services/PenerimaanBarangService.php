@@ -27,16 +27,13 @@ class PenerimaanBarangService
     /**
      * Store a new penerimaan barang along with its details.
      *
-     * @param  mixed  $file
+     * @param  mixed  $files
      * @return PenerimaanBarang
      */
-    public function store(array $data, $file = null)
+    public function store(array $data, $files = null)
     {
-        return DB::transaction(function () use ($data, $file) {
-            $fotoBonUrl = null;
-            if ($file) {
-                $fotoBonUrl = $this->cloudinaryService->upload($file);
-            }
+        return DB::transaction(function () use ($data, $files) {
+            $fotoBon = $this->uploadPhotos($files);
 
             // Gunakan no_terima dari klien (untuk idempotency/dedupe), fallback generate di server
             $noTerima = !empty($data["no_terima"]) ? $data["no_terima"] : $this->generateNoTerima();
@@ -47,7 +44,7 @@ class PenerimaanBarangService
                 "supplier_id" => $data["supplier_id"],
                 "user_id" => auth()->id(),
                 "tgl_terima" => $data["tgl_terima"],
-                "foto_bon" => $fotoBonUrl,
+                "foto_bon" => $fotoBon,
                 "status_verifikasi" => "pending", // Default is pending
             ]);
 
@@ -86,12 +83,12 @@ class PenerimaanBarangService
      * Update a pending (unverified) penerimaan barang along with its details.
      * Verified penerimaan cannot be edited.
      *
-     * @param  mixed  $file
+     * @param  mixed  $files
      * @return PenerimaanBarang
      */
-    public function update(string $id, array $data, $file = null)
+    public function update(string $id, array $data, $files = null)
     {
-        return DB::transaction(function () use ($id, $data, $file) {
+        return DB::transaction(function () use ($id, $data, $files) {
             $penerimaan = PenerimaanBarang::with("detailPenerimaans")->findOrFail($id);
 
             if ($penerimaan->status_verifikasi !== "pending") {
@@ -100,16 +97,13 @@ class PenerimaanBarangService
                 );
             }
 
-            $fotoBonUrl = $penerimaan->foto_bon;
-            if ($file) {
-                $fotoBonUrl = $this->cloudinaryService->upload($file);
-            }
+            $fotoBon = $this->uploadPhotos($files) ?? $penerimaan->getRawOriginal("foto_bon");
 
             // 1. Update PenerimaanBarang Header
             $penerimaan->update([
                 "supplier_id" => $data["supplier_id"],
                 "tgl_terima" => $data["tgl_terima"],
-                "foto_bon" => $fotoBonUrl,
+                "foto_bon" => $fotoBon,
             ]);
 
             // 2. Replace details (Stock is NOT updated yet, waiting for verification)
@@ -223,6 +217,31 @@ class PenerimaanBarangService
 
             return $penerimaan;
         });
+    }
+
+    /**
+     * Upload satu atau beberapa foto ke Cloudinary dan kembalikan JSON array URL.
+     *
+     * @param  mixed  $files
+     * @return string|null
+     */
+    protected function uploadPhotos($files): ?string
+    {
+        if (empty($files)) {
+            return null;
+        }
+
+        $files = is_array($files) ? $files : [$files];
+        $urls = [];
+
+        foreach ($files as $file) {
+            $url = $this->cloudinaryService->upload($file);
+            if ($url) {
+                $urls[] = $url;
+            }
+        }
+
+        return ! empty($urls) ? json_encode(array_values($urls)) : null;
     }
 
     /**

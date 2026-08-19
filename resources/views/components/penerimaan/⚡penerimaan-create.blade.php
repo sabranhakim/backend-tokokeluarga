@@ -58,7 +58,9 @@ new class extends Component {
             $this->no_terima = $penerimaan->no_terima;
             $this->supplier_id = $penerimaan->supplier_id;
             $this->tgl_terima = $penerimaan->tgl_terima->format('Y-m-d');
-            $this->existingFoto = $penerimaan->foto_bon;
+            $rawFoto = $penerimaan->foto_bon;
+            $decodedFoto = json_decode($rawFoto ?? '', true);
+            $this->existingFoto = is_array($decodedFoto) ? $decodedFoto : ($rawFoto ? [$rawFoto] : []);
             $this->items = $penerimaan->detailPenerimaans
                 ->map(fn($d) => [
                     'barang_id' => $d->barang_id,
@@ -323,10 +325,14 @@ new class extends Component {
                                 </button>
                             </div>
                         @elseif ($existingFoto)
-                            <div class="mt-4 relative inline-block group">
-                                <div class="absolute inset-0 bg-slate-900/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <img src="{{ $existingFoto }}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-100">
-                                <span class="absolute bottom-0 left-0 right-0 text-[9px] font-bold text-white bg-slate-900/60 text-center py-0.5 rounded-b-lg">Foto lama</span>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                @foreach($existingFoto as $fotoUrl)
+                                <div class="relative inline-block group">
+                                    <div class="absolute inset-0 bg-slate-900/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <img src="{{ $fotoUrl }}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-100">
+                                    <span class="absolute bottom-0 left-0 right-0 text-[9px] font-bold text-white bg-slate-900/60 text-center py-0.5 rounded-b-lg">Foto lama</span>
+                                </div>
+                                @endforeach
                             </div>
                         @endif
                         @error('foto_bon') <span class="text-red-500 text-xs font-medium mt-1 block">{{ $message }}</span> @enderror

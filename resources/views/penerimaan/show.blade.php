@@ -86,11 +86,21 @@
                     </div>
                 </div>
 
-                @if($penerimaanBarang->foto_bon)
+                @php
+                    $fotoBons = json_decode($penerimaanBarang->foto_bon ?? '', true);
+                    if (!is_array($fotoBons)) {
+                        $fotoBons = $penerimaanBarang->foto_bon ? [$penerimaanBarang->foto_bon] : [];
+                    }
+                @endphp
+                @if(count($fotoBons))
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-50 pb-2">Foto Bon</h3>
-                    <div class="rounded-xl overflow-hidden border border-slate-100 shadow-inner bg-slate-50">
-                        <img src="{{ $penerimaanBarang->foto_bon }}" alt="Foto Bon" class="w-full h-auto cursor-pointer hover:scale-105 transition-transform duration-300" onclick="window.open(this.src)">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-50 pb-2">Foto Bon ({{ count($fotoBons) }})</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        @foreach($fotoBons as $foto)
+                        <div class="rounded-xl overflow-hidden border border-slate-100 shadow-inner bg-slate-50">
+                            <img src="{{ $foto }}" alt="Foto Bon" class="w-full h-auto cursor-pointer hover:scale-105 transition-transform duration-300" onclick="window.open(this.src)">
+                        </div>
+                        @endforeach
                     </div>
                 </div>
                 @endif

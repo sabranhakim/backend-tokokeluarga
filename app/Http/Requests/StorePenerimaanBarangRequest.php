@@ -49,6 +49,8 @@ class StorePenerimaanBarangRequest extends FormRequest
             'supplier_id' => 'required|exists:suppliers,id_supplier',
             'tgl_terima' => 'required|date',
             'foto_bon' => 'nullable|image|max:5120|mimes:jpg,png,jpeg', // Max 5MB
+            'foto_bon_2' => 'nullable|image|max:5120|mimes:jpg,png,jpeg',
+            'foto_bon_3' => 'nullable|image|max:5120|mimes:jpg,png,jpeg',
             'items' => 'required|array|min:1',
             'items.*.barang_id' => 'required|exists:barangs,id_barang|distinct',
             'items.*.jumlah' => 'required|integer|min:1',
