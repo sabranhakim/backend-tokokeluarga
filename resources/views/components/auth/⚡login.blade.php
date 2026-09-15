@@ -65,9 +65,7 @@ new class extends Component {
 
         <div class="relative z-10 w-full flex flex-col justify-center px-14 xl:px-20 py-12">
             <div class="flex items-center gap-3 mb-12">
-                <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                    <svg class="w-6 h-6 text-[#1f4fd9]" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
-                </div>
+                <img src="{{ asset('images/logo.jpeg') }}" alt="Logo Toko" class="w-11 h-11 rounded-xl shadow-lg object-cover" />
                 <span class="text-xl font-extrabold tracking-tight text-white">Toko Grosir<span class="text-amber-300"> Kue Keluarga</span></span>
             </div>
 
@@ -79,7 +77,7 @@ new class extends Component {
             </p>
 
             <div class="mt-12 max-w-md">
-                <img src="{{ asset('images/login_image.jpg') }}" alt="Ilustrasi inventaris toko" class="rounded-2xl shadow-2xl border border-white/10 object-cover w-full aspect-[4/3]" loading="lazy" />
+                <img src="{{ asset('images/login_image.png') }}" alt="Ilustrasi inventaris toko" class="rounded-2xl shadow-2xl border border-white/10 object-cover w-full aspect-[4/3]" loading="lazy" />
             </div>
         </div>
     </div>
@@ -88,9 +86,7 @@ new class extends Component {
     <div class="relative flex-1 flex items-center justify-center p-6 md:p-12">
         <!-- Mobile brand -->
         <div class="lg:hidden absolute top-6 left-6 flex items-center gap-2.5">
-            <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
-            </div>
+            <img src="{{ asset('images/logo.jpeg') }}" alt="Logo Toko" class="w-9 h-9 rounded-lg shadow-md object-cover" />
             <span class="text-lg font-extrabold tracking-tight text-slate-800">Toko<span class="text-blue-600">Keluarga</span></span>
         </div>
 

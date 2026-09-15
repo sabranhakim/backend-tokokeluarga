@@ -5,7 +5,8 @@ namespace App\Http\Requests;
 use App\Models\PenerimaanBarang;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class StorePenerimaanBarangRequest extends FormRequest
 {
@@ -15,16 +16,13 @@ class StorePenerimaanBarangRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if ($this->input('no_terima')) {
-            $existing = PenerimaanBarang::with(['supplier', 'user', 'detailPenerimaans.barang'])
-                ->where('no_terima', $this->input('no_terima'))
-                ->first();
+            $exists = PenerimaanBarang::where('no_terima', $this->input('no_terima'))->exists();
 
-            if ($existing) {
-                throw new HttpResponseException(response()->json([
-                    'success' => true,
-                    'message' => 'Penerimaan Barang Berhasil Disimpan',
-                    'data' => $existing,
-                ], 200));
+            if ($exists) {
+                $validator = Validator::make([], []);
+                $validator->errors()->add('no_terima', 'Nomor nota/terima sudah pernah dimasukkan.');
+
+                throw new ValidationException($validator);
             }
         }
     }
